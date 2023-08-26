@@ -1,5 +1,5 @@
 # gin-player
-使用gin加载html和js文件用于播放流媒体协议
+使用gin加载html和js文件用于播放流媒体协议,主要是HLS、HTTP-FLV、HTTP-Fmp4、WHIP、WHEP
 
 计划集成以下js及其demo，等后期有能力再去修改其demo的代码
 
