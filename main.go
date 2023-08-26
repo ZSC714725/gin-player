@@ -14,6 +14,7 @@ func main() {
 	router.StaticFS("/css", http.Dir("./css"))
 	router.GET("/jessibuca.html", HandleJessibuca)
 	router.GET("/mpegts.html", HandleMpegts)
+	router.GET("/hlsjs.html", HandleHlsjs)
 	router.GET("/favicon.ico", HandleFavicon)
 
 	router.Run(":8080")
@@ -29,4 +30,8 @@ func HandleFavicon(c *gin.Context) {
 
 func HandleMpegts(c *gin.Context) {
 	c.HTML(200, "mpegts.html", nil)
+}
+
+func HandleHlsjs(c *gin.Context) {
+	c.HTML(200, "hlsjs.html", nil)
 }
