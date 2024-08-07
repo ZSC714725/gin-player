@@ -11,6 +11,8 @@
 
 (4) [webrtc](https://github.com/cloudflare/workers-sdk/tree/main/templates/stream/webrtc):支持WHIP和WHEP
 
+(5) [rtsp over websocket](https://github.com/cnotch/ipchub/tree/main/demos/rtsp):支持rtsp over websocket
+
 # docker运行
 ```
 docker build -y gin-player:init ./
@@ -29,3 +31,5 @@ http://127.0.0.1:8080/hlsjs.html
 http://127.0.0.1:8080/whep?url=<WHEP播放url>
 
 http://127.0.0.1:8080/whip?url=<WHIP推流url>
+
+http://127.0.0.1:8080/rtsp.html
