@@ -5,11 +5,11 @@
 
 (1) [jessibuca](https://github.com/langhuihui/jessibuca)
 
-(2) [mpegts.js](https://github.com/xqq/mpegts.js)
+(2) [mpegts.js](https://github.com/xqq/mpegts.js):主要播放HTTP-FLV,支持HEVC
 
-(3) [hls.js](https://github.com/video-dev/hls.js)
+(3) [hls.js](https://github.com/video-dev/hls.js):主要播放HLS协议
 
-(4) [webrtc](https://github.com/cloudflare/workers-sdk/tree/main/templates/stream/webrtc)
+(4) [webrtc](https://github.com/cloudflare/workers-sdk/tree/main/templates/stream/webrtc):支持WHIP和WHEP
 
 # docker运行
 ```
@@ -25,3 +25,7 @@ http://127.0.0.1:8080/mpegts.html
 http://127.0.0.1:8080/jessibuca.html
 
 http://127.0.0.1:8080/hlsjs.html
+
+http://127.0.0.1:8080/whep?url=<WHEP播放url>
+
+http://127.0.0.1:8080/whip?url=<WHIP推流url>
