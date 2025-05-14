@@ -29,6 +29,7 @@ func main() {
 	router.GET("/whep", HandleWebRtcjs)
 	router.GET("/rtsp.html", HandleRtspOverWebsocket)
 	router.GET("/las.html", HandleLas)
+	router.GET("/flvjs.html", HandleFlvjs)
 	router.GET("/favicon.ico", HandleFavicon)
 
 	router.Run(":8080")
@@ -56,6 +57,10 @@ func HandleRtspOverWebsocket(c *gin.Context) {
 
 func HandleLas(c *gin.Context) {
 	c.HTML(200, "las.html", nil)
+}
+
+func HandleFlvjs(c *gin.Context) {
+	c.HTML(200, "flvjs.html", nil)
 }
 
 type WebRtcInfo struct {

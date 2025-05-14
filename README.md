@@ -15,6 +15,8 @@
 
 (6) [LAS](https://github.com/KwaiVideoTeam/las/tree/master/client/las.js):支持las协议,增加debug打印，打印pts和请求url
 
+(7) [flv.js](https://github.com/bilibili/flv.js.git):主要播放HTTP-FLV
+
 # docker运行
 ```
 docker build -y gin-player:init ./
@@ -35,6 +37,8 @@ http://127.0.0.1:8080/whep?url=<WHEP播放url>
 http://127.0.0.1:8080/whip?url=<WHIP推流url>
 
 http://127.0.0.1:8080/rtsp.html
+
+http://127.0.0.1:8080/flvjs.html
 
 http://127.0.0.1:8080/las.html
 
