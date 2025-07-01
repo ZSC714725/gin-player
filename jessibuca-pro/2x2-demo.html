@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta http-equiv="origin-trial"
+          content="AhQB+uNRI7lww30oPK+0ZcGotIvuoHJL+NkkWOhqDdooY6+xnuiYmZli2SwlH1vkrKdB5WxMpsv5KRc/q9zFswoAAAB3eyJvcmlnaW4iOiJodHRwczovL2plc3NpYnVjYS5jb206NDQzIiwiZmVhdHVyZSI6IlVucmVzdHJpY3RlZFNoYXJlZEFycmF5QnVmZmVyIiwiZXhwaXJ5IjoxNzA5ODU1OTk5LCJpc1N1YmRvbWFpbiI6dHJ1ZX0=">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Jessibuca Pro 2x2 demo</title>
+    <script src="./vconsole.js"></script>
+    <script src="./js/jessibuca-pro-demo.js"></script>
+    <link rel="stylesheet" href="./demo.css">
+    <style>
+        .container-shell:before {
+            content: "jessibuca pro 2x2 demo player";
+        }
+    </style>
+</head>
+<body class="page">
+<div class="root">
+    <div class="container-shell">
+        <div class="container-multi">
+            <div class="container" id="container1"></div>
+            <div class="container" id="container2"></div>
+        </div>
+        <div class="container-multi">
+            <div class="container" id="container3"></div>
+            <div class="container" id="container4"></div>
+        </div>
+        <div class="input">
+            <div>
+                当前浏览器：
+                <span id="mseSupport264" style="color: green;display: none">支持MSE H264解码；</span>
+                <span id="mseSupport" style="color: green;display: none">支持MSE H265解码；</span>
+                <span id="mseNotSupport264" style="color: red;display: none">不支持MSE H264解码；</span>
+                <span id="mseNotSupport"
+                      style="color: red;display: none">不支持MSE H265解码,会自动切换成wasm解码；</span>
+            </div>
+        </div>
+        <div class="input">
+            <div>
+                当前浏览器：
+                <span id="wcsSupport264" style="color: green;display: none">支持Webcodecs H264解码；</span>
+                <span id="wcsSupport" style="color: green;display: none">支持Webcodecs H265解码（不一定准确）；</span>
+                <span id="wcsNotSupport264"
+                      style="color: red;display: none">不支持Webcodecs H264解码(https/localhost)；</span>
+                <span id="wcsNotSupport" style="color: red;display: none">不支持Webcodecs H265解码(https/localhost),会自动切换成wasm解码</span>
+            </div>
+        </div>
+        <div class="input">
+            <div>
+                当前浏览器：
+                <span id="simdSupport" style="color: green;display: none">支持WASM SIMD解码</span>
+                <span id="simdNotSupport"
+                      style="color: red;display: none">不支持WASM SIMD解码,会自动切换成wasm解码</span>
+            </div>
+        </div>
+        <div class="input">
+            <div><input
+                type="checkbox"
+                checked
+                id="useMSE"
+            /><span>MediaSource</span>
+                <input
+                    type="checkbox"
+                    id="useWCS"
+                /><span>Webcodec</span>
+                <input
+                    type="checkbox"
+                    id="useSIMD"
+                /><span>SIMD</span>
+                <input
+                    type="checkbox"
+                    checked
+                    id="useSIMDMThreading"
+                    onclick="replay()"
+                /><span>启动多线程（仅WASM,WASM(SIMD)解码支持）</span>
+            </div>
+        </div>
+        <div class="input">
+            <div>
+                <input
+                    checked
+                    type="checkbox"
+                    id="isFlv"
+                /><span>是否flv格式</span>
+                <span>缓存时长：</span>
+                <input placeholder="单位：秒" type="text" id="videoBuffer" style="width: 50px" value="0.2">秒
+                <span>缓存延迟(延迟超过会触发丢帧)：</span>
+                <input placeholder="单位：秒" type="text" id="videoBufferDelay" style="width: 50px" value="2">秒
+                <button id="replay">重播</button>
+            </div>
+        </div>
+        <div class="input">
+            <div>
+                <input
+                    checked
+                    onclick="replay()"
+                    type="checkbox"
+                    id="demuxUseWorker"
+                /><span>硬解码(MediaSource，Webcodec)worker解封装</span>
+                <input
+                    checked
+                    onclick="replay()"
+                    type="checkbox"
+                    id="mseDecoderUseWorker"
+                /><span>硬解码(MediaSource)worker解码</span>
+            </div>
+        </div>
+        <div class="input">
+            <div>
+                <input
+                    onclick="toggleDebugLevel()"
+                    type="checkbox"
+                    id="isDebug"
+                /><span>开启日志</span>
+
+            </div>
+        </div>
+
+        <div class="input">
+            <div>输入URL：</div>
+            <input
+                autocomplete="on"
+                id="playUrl1"
+                value=""
+            />
+        </div>
+        <div class="input">
+            <div>输入URL：</div>
+            <input
+                autocomplete="on"
+                id="playUrl2"
+                value=""
+            />
+        </div>
+        <div class="input">
+            <div>输入URL：</div>
+            <input
+                autocomplete="on"
+                id="playUrl3"
+                value=""
+            />
+        </div>
+        <div class="input">
+            <div>输入URL：</div>
+            <input
+                autocomplete="on"
+                id="playUrl4"
+                value=""
+            />
+        </div>
+        <div class="input">
+            <button id="play">播放</button>
+            <button id="pause" style="display: none">停止</button>
+        </div>
+        <div class="input" style="line-height: 30px">
+            <button id="destroy">销毁</button>
+        </div>
+    </div>
+</div>
+<script src="./demo.js"></script>
+<script>
+    var $player = document.getElementById('play');
+    var $pause = document.getElementById('pause');
+    var $destroy = document.getElementById('destroy');
+    var $useMSE = document.getElementById('useMSE');
+    var $useSIMD = document.getElementById('useSIMD');
+    var $useWCS = document.getElementById('useWCS');
+    var $videoBuffer = document.getElementById('videoBuffer');
+    var $videoBufferDelay = document.getElementById('videoBufferDelay');
+    var $replay = document.getElementById('replay');
+    var $demuxUseWorker = document.getElementById('demuxUseWorker');
+    var $mseDecoderUseWorker = document.getElementById('mseDecoderUseWorker');
+    var $isDebug = document.getElementById('isDebug');
+    var $isFlv = document.getElementById('isFlv');
+    var $useSIMDMThreading = document.getElementById('useSIMDMThreading');
+
+    var showOperateBtns = true; // 是否显示按钮
+    var forceNoOffscreen = true; //
+    var playList = [];
+    let size = 4
+
+    function _create(id, index) {
+        var $container = document.getElementById('container' + id);
+
+        var jessibuca = new JessibucaPro({
+            container: $container,
+            decoder: './js/decoder-pro.js',
+            videoBuffer: 0.2, // 缓存时长
+            isResize: false,
+            text: "",
+            loadingText: "加载中",
+            debug: true,
+            debugLevel: $isDebug.checked === true ? "debug" : '',
+            isMulti: true,
+            useMSE: $useMSE.checked === true,
+            decoderErrorAutoWasm: false,
+            useSIMD: $useSIMD.checked === true,
+            useWCS: $useWCS.checked === true,
+            useMThreading: $useSIMDMThreading.checked === true,
+            hasAudio: false,
+            useVideoRender: true,
+            controlAutoHide: true,
+            showBandwidth: showOperateBtns, // 显示网速
+            showPerformance: showOperateBtns,
+            isFlv: $isFlv.checked === true,
+            operateBtns: {
+                fullscreen: showOperateBtns,
+                screenshot: showOperateBtns,
+                play: showOperateBtns,
+                audio: showOperateBtns,
+            },
+            watermarkConfig: {
+                text: {
+                    content: 'jessibuca-pro'
+                },
+                right: 10,
+                top: 10
+            },
+            demuxUseWorker: $demuxUseWorker.checked === true,
+            mseDecoderUseWorker: $mseDecoderUseWorker.checked === true,
+            websocketOpenTimeout: 3 + index * 0.5,
+            loadingTimeout: 5 + index * 0.5,
+        },);
+
+        jessibuca.on(JessibucaPro.EVENTS.playFailedAndPaused, (error) => {
+            jessibuca.showErrorMessageTips('播放异常：' + error);
+        })
+        jessibuca.on(JessibucaPro.EVENTS.crashLog, (log) => {
+            console.error('crashLog', log)
+        })
+
+        playList.push(jessibuca);
+    }
+
+    function create() {
+        for (let i = 0; i < size; i++) {
+            _create(i + 1, i);
+            $player.style.display = 'inline-block';
+            $pause.style.display = 'none';
+            $destroy.style.display = 'none';
+        }
+    }
+
+    create();
+
+    function play() {
+        for (let i = 0; i < size; i++) {
+            var id = i + 1;
+            var $playHref = document.getElementById('playUrl' + id);
+            let player = playList[i];
+            const url = $playHref.value;
+            if (url) {
+                setTimeout((url) => {
+                    console.log(url);
+                    player && player.play(url).then(() => {
+
+                    }).catch((e) => {
+                        console.error(e);
+                    });
+                }, 0, url)
+            }
+        }
+
+        $player.style.display = 'none';
+        $pause.style.display = 'inline-block';
+        $destroy.style.display = 'inline-block';
+    }
+
+    function destroyAndCreate() {
+        return new Promise((resolve, reject) => {
+            const destroyList = [];
+            for (let i = 0; i < size; i++) {
+                let player = playList[i];
+                if (player) {
+                    destroyList.push(player.destroy());
+                }
+            }
+            Promise.all(destroyList).then(() => {
+                playList = [];
+                setTimeout(() => {
+                    create()
+                    resolve();
+                }, 100)
+            }).catch((e) => {
+                console.error(e);
+            })
+        })
+
+    }
+
+    function replay() {
+        destroyAndCreate().then(() => {
+            play();
+        });
+    }
+
+    function pause() {
+        $player.style.display = 'inline-block';
+        $pause.style.display = 'none';
+        for (let i = 0; i < size; i++) {
+            let player = playList[i];
+            player && player.pause()
+        }
+    }
+
+    $player.addEventListener('click', function () {
+        play();
+    }, false)
+
+
+    $pause.addEventListener('click', function () {
+        pause();
+    })
+
+    $destroy.addEventListener('click', function () {
+        destroyAndCreate().then(() => {
+
+        });
+    })
+
+    $replay.addEventListener('click', function () {
+        replay();
+    })
+
+    $useMSE.addEventListener('click', function () {
+        const checked = $useMSE.checked;
+        if (checked) {
+            $useSIMD.checked = false
+            $useWCS.checked = false
+        }
+        replay();
+    })
+
+    $useSIMD.addEventListener('click', function () {
+        const checked = $useSIMD.checked;
+        if (checked) {
+            $useMSE.checked = false
+            $useWCS.checked = false
+        }
+        replay();
+    })
+
+    $useWCS.addEventListener('click', function () {
+        const checked = $useWCS.checked;
+        if (checked) {
+            $useMSE.checked = false
+            $useSIMD.checked = false
+        }
+        replay();
+    })
+
+
+    function toggleDebugLevel() {
+
+        for (let i = 0; i < size; i++) {
+            let player = playList[i];
+            if (player) {
+                const isDebug = $isDebug.checked === true;
+                player.updateDebugLevel(isDebug ? 'debug' : 'warn')
+            }
+        }
+
+    }
+</script>
+
+</body>
+</html>

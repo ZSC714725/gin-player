@@ -19,6 +19,7 @@
 | **HLS.js** | HLS | HTTP Live Streaming 播放器 | `/hlsjs.html` |
 | **MPEG-TS** | MPEG2-TS/FLV | 基于 flv.js 的低延迟播放器 | `/mpegts.html` |
 | **Jessibuca** | HTTP-FLV | 超低延迟视频播放器 | `/jessibuca.html` |
+| **Jessibuca Pro** | HTTP-FLV/HLS/MP4 | 专业版低延迟播放器，支持AI检测 | `/jessibuca-pro/` |
 
 | **LAS** | LAS | 轻量级自适应流媒体播放器 | `/las.html` |
 | **RTSP** | RTSP over WebSocket | RTSP 协议播放器 | `/rtsp.html` |
@@ -79,7 +80,17 @@ docker run -it -p 8080:8080 gin-player:latest
 3. 点击"开始播放"按钮
 4. 开始播放远程视频流
 
+### Jessibuca Pro 播放器
+Jessibuca Pro 是专业版低延迟播放器，提供以下高级功能：
+- **多协议支持**：HTTP-FLV、HLS、MP4 等多种格式
+- **AI 检测功能**：人脸检测、物体检测、遮挡检测等
+- **录制功能**：支持 MP4 录制和截图
+- **多画面布局**：支持 2x2、3x3、4x4、5x5、6x6、6x7 等多种布局
+- **加密支持**：支持多种加密方式（M7S、SM4、XOR等）
+- **弹幕功能**：支持实时弹幕显示
+- **PTZ 控制**：支持云台控制功能
 
+访问 `/jessibuca-pro/` 查看所有演示页面。
 
 ### 其他播放器
 所有播放器都提供了直观的界面，支持：
@@ -101,7 +112,7 @@ docker run -it -p 8080:8080 gin-player:latest
   - [hls.js](https://github.com/video-dev/hls.js) - HLS 播放
   - [mpegts.js](https://github.com/xqq/mpegts.js) - MPEG-TS 播放
   - [jessibuca](https://github.com/langhuihui/jessibuca) - 低延迟播放
-
+  - [jessibuca-pro](https://github.com/langhuihui/jessibuca-pro) - 专业版低延迟播放器，支持AI检测
   - [LAS](https://github.com/KwaiVideoTeam/las) - 自适应流媒体
 - **WebRTC**：WHIP/WHEP 协议支持
 - **样式**：现代化 CSS3 + 响应式设计
@@ -115,6 +126,7 @@ docker run -it -p 8080:8080 gin-player:latest
 | HLS.js | http://localhost:8080/hlsjs.html | HLS 播放器 |
 | MPEG-TS | http://localhost:8080/mpegts.html | MPEG2-TS/FLV 播放器 |
 | Jessibuca | http://localhost:8080/jessibuca.html | 低延迟播放器 |
+| Jessibuca Pro | http://localhost:8080/jessibuca-pro/ | 专业版低延迟播放器 |
 
 | LAS | http://localhost:8080/las.html | 自适应流媒体播放器 |
 | RTSP | http://localhost:8080/rtsp.html | RTSP over WebSocket |
@@ -203,6 +215,6 @@ LAS 播放器支持多分辨率自适应播放，以下是 manifest.json 配置�
 - [hls.js](https://github.com/video-dev/hls.js) - HLS 播放器
 - [mpegts.js](https://github.com/xqq/mpegts.js) - MPEG-TS 播放器
 - [jessibuca](https://github.com/langhuihui/jessibuca) - 低延迟播放器
-
+- [jessibuca-pro](https://github.com/langhuihui/jessibuca-pro) - 专业版低延迟播放器
 - [LAS](https://github.com/KwaiVideoTeam/las) - 自适应流媒体
 - 以及其他所有贡献者

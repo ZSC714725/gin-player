@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Jessica demo</title>
+    <link rel="stylesheet" href="./demo.css">
+    <script src="./vconsole.js"></script>
+    <script>
+        window.JESSIBUCA_PRO_FACE_DETECTOR_WASM_URL = './js/jessibuca-pro-face-detector-decoder.wasm'
+    </script>
+    <script src="./js/jessibuca-pro-face-detector-demo.js"></script>
+    <script src="./js/jessibuca-pro-demo.js"></script>
+    <style>
+        .container-shell:before {
+            content: "jessibuca pro face detect demo player";
+        }
+    </style>
+</head>
+<body class="page">
+<div class="root">
+    <div class="container-shell">
+        <div id="container"></div>
+        <div class="input">
+            tip：支持回调ai识别出来的数据，流ts时间戳，x,y 坐标系，width，height 宽高。(F12 控制台可以看到)
+        </div>
+        <div class="input">
+            tip: 检测间隔时间设置为0 的时候，每一帧都会检查。（会非常吃性能）
+        </div>
+        <div class="input">
+            <span style="color: green">tip: 人脸识别默认关闭：需要在底部控制条上面手动开启人脸识别检测</span>
+        </div>
+        <div class="input">
+            <div>
+                <span>是否显示识别框子</span>
+                <input type="checkbox" id="aiFaceDetectShowRect" checked>
+                <span> | </span>
+                <span>识别度：</span>
+                <select id="detectWidth">
+                    <option value="5">极高</option>
+                    <option value="4">较高</option>
+                    <option value="3" selected>高</option>
+                    <option value="2">中等</option>
+                    <option value="1">低</option>
+                </select>
+                <span> | </span>
+                检测间隔时间(单位：秒)：
+                <input type="text" style="width: 100px" id="intervalTime" value="0.5">
+                <span style="color: red;margin-left: 10px">识别度越高，检测间隔越短,越吃CUP</span>
+            </div>
+        </div>
+
+        <div class="input">
+            <div>
+                <span>边框宽度</span>
+                <input type="text" id="borderWidth" style="width:50px" value="2">
+                <span> | </span>
+                <span>边框颜色</span>
+                <input type="text" id="borderColor" style="width:80px" value="#0000FF">
+                <span> | </span>
+                <span>是否生成截图</span>
+                <input type="checkbox" id="aiFaceDetectEmitBase64" checked>
+            </div>
+            <button onclick="replay()">重播</button>
+        </div>
+        <div class="input">
+            可用测试地址(感谢西瓜视频)：http://pull-demo.volcfcdnrd.com/live/st-4536521_yzmuhevcd.flv
+        </div>
+        <div class="input">
+            <div>输入URL：</div>
+            <input
+                autocomplete="on"
+                id="playUrl"
+                value=""
+            />
+            <button id="play">播放</button>
+            <button id="pause" style="display: none">停止</button>
+        </div>
+        <div class="input" style="line-height: 30px">
+            <button id="destroy">销毁</button>
+        </div>
+        <div class="input input-wrap">
+            <span>截图：</span>
+            <img id="aiImage1" src="">
+            <img id="aiImage2" alt="">
+            <img id="aiImage3" alt="">
+            <img id="aiImage4" alt="">
+            <img id="aiImage5" alt="">
+        </div>
+    </div>
+</div>
+
+<script>
+    var $player = document.getElementById('play');
+    var $pause = document.getElementById('pause');
+    var $playHref = document.getElementById('playUrl');
+    var $container = document.getElementById('container');
+    var $destroy = document.getElementById('destroy');
+    var $detectWidth = document.getElementById('detectWidth');
+    var $intervalTime = document.getElementById('intervalTime');
+    var $aiFaceDetectShowRect = document.getElementById('aiFaceDetectShowRect');
+    var $borderWidth = document.getElementById('borderWidth');
+    var $borderColor = document.getElementById('borderColor');
+    var $aiFaceDetectEmitBase64 = document.getElementById('aiFaceDetectEmitBase64');
+
+
+    var showOperateBtns = true; // 是否显示按钮
+    var forceNoOffscreen = true; //
+    var jessibuca = null;
+
+    var currentIndex = 1;
+    function create() {
+        clearImage();
+        jessibuca = new JessibucaPro({
+            container: $container,
+            videoBuffer: 1, // 缓存时长
+            decoder: './js/decoder-pro.js',
+            isResize: false,
+            text: "",
+            loadingText: "加载中",
+            debug: true,
+            useMSE: false,
+            useWCS: false,
+            useSIMD: true,
+            showBandwidth: showOperateBtns, // 显示网速
+            showPerformance: showOperateBtns, // 显示性能
+            operateBtns: {
+                fullscreen: showOperateBtns,
+                play: showOperateBtns,
+                audio: showOperateBtns,
+                aiFace: showOperateBtns,
+            },
+            audioEngine: "worklet",
+            forceNoOffscreen: forceNoOffscreen,
+            isNotMute: false,
+            heartTimeout: 10,
+
+            useFaceDetector: true,
+            aiFaceDetectShowRect: $aiFaceDetectShowRect.checked,
+            aiFaceDetectLevel: Number($detectWidth.value),
+            aiFaceDetectInterval: Number($intervalTime.value),
+            aiFaceDetectRectStyle: {
+                borderWidth: Number($borderWidth.value),
+                borderColor: $borderColor.value,
+            },
+            aiFaceDetectEmitBase64: $aiFaceDetectEmitBase64.checked,
+        });
+
+        jessibuca.on(JessibucaPro.EVENTS.playFailedAndPaused, (error) => {
+            jessibuca.showErrorMessageTips('播放异常：' + error);
+        })
+
+        jessibuca.on('aiFaceDetectorInfo', (msg) => {
+            console.log('aiFaceDetectorInfo', msg);
+            (msg.list || []).forEach((item) => {
+                if (item.base64) {
+                    // 循环渲染图片
+                    var $img = document.getElementById('aiImage' + currentIndex);
+                    $img.src = item.base64;
+                    currentIndex++;
+                    if (currentIndex > 5) {
+                        currentIndex = 1;
+                    }
+                }
+            })
+        })
+
+
+        $player.style.display = 'inline-block';
+        $pause.style.display = 'none';
+        $destroy.style.display = 'none';
+    }
+
+
+    create();
+
+    function clearImage(){
+        currentIndex = 1
+        for (var i = 1; i <= 5; i++) {
+            var $img = document.getElementById('aiImage' + i);
+            $img.src = '';
+        }
+    }
+
+    function play() {
+        var href = $playHref.value;
+        if (href) {
+            jessibuca.play(href).catch((error) => {
+                jessibuca.showErrorMessageTips(error.toString());
+            });
+            $player.style.display = 'none';
+            $pause.style.display = 'inline-block';
+            $destroy.style.display = 'inline-block';
+        }
+        else{
+            jessibuca.showErrorMessageTips('播放地址不能为空');
+        }
+    }
+
+
+    function replay() {
+        if (jessibuca) {
+            jessibuca.destroy().then(() => {
+                create();
+                play();
+            });
+        } else {
+            create();
+            play();
+        }
+    }
+
+
+    $player.addEventListener('click', function () {
+        play();
+    }, false)
+
+
+    $pause.addEventListener('click', function () {
+        $player.style.display = 'inline-block';
+        $pause.style.display = 'none';
+        jessibuca.pause();
+    })
+
+    $destroy.addEventListener('click', function () {
+        if (jessibuca) {
+            jessibuca.destroy().then(() => {
+                create();
+            });
+        } else {
+            create();
+        }
+
+    })
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>jessibuca pro mobile demo</title>
+    <script src="./vconsole.js"></script>
+    <script src="./js/jessibuca-pro-demo.js"></script>
+    <link rel="stylesheet" href="./demo.css">
+    <style>
+        .container-shell:before {
+            content: "jessibuca pro mobile demo";
+        }
+    </style>
+</head>
+<body class="page">
+<div class="root">
+    <div class="container-shell">
+        <div id="container"></div>
+        <div class="input">
+            <div>
+                当前浏览器：
+                <span id="mseSupport264" style="color: green;display: none">支持MSE H264解码；</span>
+                <span id="mseSupport" style="color: green;display: none">支持MSE H265解码；</span>
+                <span id="mseNotSupport264" style="color: red;display: none">不支持MSE H264解码；</span>
+                <span id="mseNotSupport"
+                      style="color: red;display: none">不支持MSE H265解码,会自动切换成wasm解码；</span>
+            </div>
+        </div>
+        <div class="input">
+            <div>
+                当前浏览器：
+                <span id="wcsSupport264" style="color: green;display: none">支持Webcodecs H264解码；</span>
+                <span id="wcsSupport" style="color: green;display: none">支持Webcodecs H265解码（不一定准确）；</span>
+                <span id="wcsNotSupport264"
+                      style="color: red;display: none">不支持Webcodecs H264解码(https/localhost)；</span>
+                <span id="wcsNotSupport" style="color: red;display: none">不支持Webcodecs H265解码(https/localhost),会自动切换成wasm解码</span>
+            </div>
+        </div>
+        <div class="input">
+            <div>
+                当前浏览器：
+                <span id="simdSupport" style="color: green;display: none">支持WASM SIMD解码</span>
+                <span id="simdNotSupport"
+                      style="color: red;display: none">不支持WASM SIMD解码,会自动切换成wasm解码</span>
+            </div>
+        </div>
+        <div class="input">
+            <div>
+                <input
+                    type="checkbox"
+                    id="useWebFullScreen"
+                /><span>使用web全屏</span>
+            </div>
+
+        </div>
+        <div class="input">
+            <div>输入URL：</div>
+            <input
+                autocomplete="on"
+                id="playUrl"
+                value=""
+            />
+            <button id="play">播放</button>
+            <button id="pause" style="display: none">停止</button>
+        </div>
+        <div class="input" style="line-height: 30px">
+            <button id="fullscreen">全屏</button>
+
+            <button id="destroy">销毁</button>
+        </div>
+    </div>
+</div>
+<script src="./demo.js"></script>
+<script>
+    var $player = document.getElementById('play');
+    var $pause = document.getElementById('pause');
+    var $playHref = document.getElementById('playUrl');
+    var $container = document.getElementById('container');
+    var $destroy = document.getElementById('destroy');
+    var $fullscreen = document.getElementById('fullscreen');
+    var $useWebFullScreen = document.getElementById('useWebFullScreen');
+
+
+    var showOperateBtns = true; // 是否显示按钮
+    var forceNoOffscreen = true; //
+    var jessibuca = null;
+
+    function create() {
+        jessibuca = new JessibucaPro({
+            container: $container,
+            videoBuffer: 0.2, // 缓存时长
+            decoder: './js/decoder-pro.js',
+            isResize: false,
+            useSIMD: true,
+            text: "",
+            loadingText: "加载中",
+            debug: true,
+            showBandwidth: showOperateBtns, // 显示网速
+            operateBtns: {
+                fullscreen: showOperateBtns,
+                screenshot: showOperateBtns,
+                play: showOperateBtns,
+                audio: showOperateBtns,
+            },
+            forceNoOffscreen: forceNoOffscreen,
+            useWebFullScreen: $useWebFullScreen.checked,
+            isNotMute: false,
+        },);
+
+        jessibuca.on(JessibucaPro.EVENTS.playFailedAndPaused, (error) => {
+            jessibuca.showErrorMessageTips('播放异常：' + error);
+        })
+
+        $player.style.display = 'inline-block';
+        $pause.style.display = 'none';
+        $destroy.style.display = 'none';
+        $fullscreen.style.display = 'none';
+    }
+
+
+    create();
+
+    function replay() {
+        if (jessibuca) {
+            jessibuca.destroy().then(()=>{
+                create();
+                play();
+            });
+        }
+        else {
+            create();
+            play();
+        }
+
+    }
+
+    function play() {
+        var href = $playHref.value;
+        if (href) {
+            jessibuca.play(href).catch((error) => {
+                jessibuca.showErrorMessageTips(error.toString());
+            });
+            $player.style.display = 'none';
+            $pause.style.display = 'inline-block';
+            $destroy.style.display = 'inline-block';
+        }
+        else{
+            jessibuca.showErrorMessageTips('播放地址不能为空');
+        }
+    }
+
+    $player.addEventListener('click', function () {
+        play();
+    }, false)
+
+
+    $pause.addEventListener('click', function () {
+        $player.style.display = 'inline-block';
+        $pause.style.display = 'none';
+        jessibuca.pause();
+    })
+
+    $destroy.addEventListener('click', function () {
+        if (jessibuca) {
+            jessibuca.destroy().then(()=>{
+                create();
+            });
+        }
+        else{
+            create();
+        }
+
+    })
+
+    $fullscreen.addEventListener('click',function () {
+        if(jessibuca){
+            jessibuca.setFullscreen(true)
+        }
+    })
+
+    $useWebFullScreen.addEventListener('click', function () {
+        replay()
+    })
+
+</script>
+
+</body>
+</html>

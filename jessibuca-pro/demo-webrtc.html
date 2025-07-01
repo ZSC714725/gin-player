@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Jessica webrtc demo</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <script src="./vconsole.js"></script>
+    <script src="./js/jessibuca-pro-demo.js"></script>
+    <link rel="stylesheet" href="./demo.css">
+    <style>
+        .container-shell:before {
+            content: "jessibuca pro webrtc demo";
+        }
+    </style>
+</head>
+<body class="page">
+<div class="root">
+    <div class="container-shell">
+        <div id="container"></div>
+        <div class="input" style="border-bottom: 1px solid">
+            <div>
+                <span>M7S的webrtc地址：</span>webrtc://localhost:8080/webrtc/play/{live/test} <br>
+                <span style="color: red">注意 'live/test' 是streamPath</span>
+            </div>
+        </div>
+        <div class="input" >
+            <div>
+                <span>ZLM的webrtc地址：</span>http://127.0.0.1/index/api/webrtc?app=live&stream={test}&type=play <br>
+                <span style="color:red;">注意：将zlm的webrtc播放地址，https:// 修改为 webrtc:// 就可以了</span>即：webrtc://127.0.0.1/index/api/webrtc?app=live&stream={test}&type=play
+            </div>
+        </div>
+        <div class="input" style="border-bottom: 1px solid">
+            <div>
+                <input
+                    type="checkbox"
+                    id="isWebrtcForZLM"
+                /><span>强制ZLM服务器</span>
+            </div>
+            <span style="color: green">webrtc://127.0.0.1/index/api/webrtc?app=live&stream=test&type=play</span>
+
+        </div>
+        <div class="input">
+            <div>
+                <span>SRS的webrtc地址：</span>webrtc://127.0.0.1/live/{livestream} <br>
+                <span style="color:red;">注意：将SRS的path前面拼接个/rtc/v1/play/就可以了</span>即：webrtc://127.0.0.1/rtc/v1/play/live/{livestream}
+            </div>
+        </div>
+        <div class="input" style="border-bottom: 1px solid">
+            <div>
+                <div>
+                    <input
+                        type="checkbox"
+                        id="isWebrtcForSRS"
+                    /><span>强制SRS服务器（默认是4-版本）</span>
+                    <span style="color: green">url 格式：webrtc://127.0.0.1/rtc/v1/play/live/{livestream}</span>
+                </div>
+                <div>
+                    <input
+                        type="checkbox"
+                        id="webrtcForSRSBySDK"
+                    /><span>SRS服务器(v4+)</span>
+                    <span style="color: green">url 格式：webrtc://127.0.0.1/index/api/webrtc?app=live&stream={livestream}</span>
+                </div>
+                <div>
+                    <input
+                        type="checkbox"
+                        id="webrtcForSRSByWhipWhep"
+                    /><span>SRS服务器（Whip-Whep)格式</span>
+                    <span style="color: green">url 格式：webrtc://127.0.0.1/rtc/v1/whep/?app=live&stream={livestream}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="input" style="border-bottom: 1px solid">
+            <div>
+                <input
+                    type="checkbox"
+                    id="isForOthers"
+                /><span>强制其他Webrtc服务器</span>
+                <span>其他的webrtc地址：</span><span style="color: green">webrtc://127.0.0.1/test/sdp</span> <br>
+                播放器是不会根据url上面的路径来检测的的。
+            </div>
+        </div>
+        <div class="input">
+            <div>输入URL：</div>
+            <input
+                autocomplete="on"
+                id="playUrl"
+                placeholder="webrtc://"
+                value=""
+            />
+            <button id="play">播放</button>
+            <button id="pause" style="display: none">停止</button>
+        </div>
+        <div class="input" style="line-height: 30px">
+            <button id="destroy" style="display: none">销毁</button>
+            <span class="fps-inner"></span>
+        </div>
+    </div>
+</div>
+<script src="./demo.js"></script>
+<script>
+    var $player = document.getElementById('play');
+    var $pause = document.getElementById('pause');
+    var $playHref = document.getElementById('playUrl');
+    var $container = document.getElementById('container');
+    var $destroy = document.getElementById('destroy');
+    var $isForOthers = document.getElementById('isForOthers');
+    var $isWebrtcForSRS = document.getElementById('isWebrtcForSRS');
+    var $webrtcForSRSBySDK = document.getElementById('webrtcForSRSBySDK');
+    var $webrtcForSRSByWhipWhep = document.getElementById('webrtcForSRSByWhipWhep');
+    var $isWebrtcForZLM = document.getElementById('isWebrtcForZLM');
+    var showOperateBtns = true; // 是否显示按钮
+    var forceNoOffscreen = true; //
+    var jessibuca = null;
+
+
+    function create() {
+        jessibuca = new JessibucaPro({
+            container: $container,
+            decoder: './js/decoder-pro.js',
+            isResize: false,
+            text: "",
+            loadingText: "加载中",
+            debug: true,
+            debugLevel: "debug",
+            showBandwidth: showOperateBtns, // 显示网速
+            showPerformance: showOperateBtns, // 显示性能
+            operateBtns: {
+                fullscreen: showOperateBtns,
+                screenshot: showOperateBtns,
+                play: showOperateBtns,
+                audio: showOperateBtns,
+                ptz: showOperateBtns,
+                quality: showOperateBtns,
+                performance: showOperateBtns,
+            },
+            heartTimeoutReplayUseLastFrameShow: true,
+            audioEngine: "worklet",
+            isNotMute: false,
+            heartTimeout: 1000,
+            useMSE: true,
+            useWCS: true,
+            isWebrtcForOthers: $isForOthers.checked === true,
+            isEmitSEI: true,
+            isWebrtcForSRS: $isWebrtcForSRS.checked === true,
+            isWebrtcForZLM: $isWebrtcForZLM.checked === true,
+            webrtcForSRSBySDK: $webrtcForSRSBySDK.checked === true,
+            webrtcForSRSByWhipWhep: $webrtcForSRSByWhipWhep.checked === true,
+            // videoRenderType:'canvas'
+        },);
+
+
+        jessibuca.on('streamQualityChange', (value) => {
+            console.log('streamQualityChange', value);
+        })
+
+        jessibuca.on('timeUpdate', (value) => {
+            // console.log('timeUpdate', value);
+        })
+
+        jessibuca.on(JessibucaPro.EVENTS.crashLog, (log) => {
+            console.log('crashLog', log)
+        })
+        jessibuca.on('currentPts', (pts) => {
+            // console.error('currentPts', pts);
+        })
+
+        jessibuca.on('videoSEISyncPts', (value) => {
+            const decoder = new TextDecoder(); // 创建一个 TextDecoder 对象
+            let str = decoder.decode(value.data);
+
+            console.log(`videoSEISyncPts pts is ${value.pts} ,ts is ${value.ts}, data is`, value.data, str);
+
+
+        })
+
+
+        $player.style.display = 'inline-block';
+        $pause.style.display = 'none';
+        $destroy.style.display = 'none';
+    }
+
+
+    // create();
+
+    function play() {
+        var href = $playHref.value;
+        if (href) {
+            jessibuca.play(href);
+            $player.style.display = 'none';
+            $pause.style.display = 'inline-block';
+            $destroy.style.display = 'inline-block';
+        }
+    }
+
+
+    function replay() {
+        if (jessibuca) {
+            jessibuca.destroy().then(() => {
+                create();
+                play();
+            });
+        } else {
+            create();
+            play();
+        }
+    }
+
+    $player.addEventListener('click', function () {
+        replay();
+    }, false)
+
+
+    $pause.addEventListener('click', function () {
+        $player.style.display = 'inline-block';
+        $pause.style.display = 'none';
+        jessibuca.pause();
+    })
+
+    $destroy.addEventListener('click', function () {
+        if (jessibuca) {
+            jessibuca.destroy().then(() => {
+                create();
+            });
+        } else {
+            create();
+        }
+    })
+
+    $webrtcForSRSBySDK.addEventListener('click', function () {
+        if ($webrtcForSRSBySDK.checked === true) {
+            $isWebrtcForSRS.checked = true;
+
+            $isWebrtcForZLM.checked = false;
+            $isForOthers.checked = false;
+        }
+    })
+    $isWebrtcForSRS.addEventListener('click', function () {
+        if ($isWebrtcForSRS.checked === false) {
+            $webrtcForSRSBySDK.checked = false;
+        }
+        if ($isWebrtcForSRS.checked === true) {
+            $isWebrtcForZLM.checked = false;
+            $isForOthers.checked = false;
+        }
+    })
+
+    $isWebrtcForZLM.addEventListener('click', function () {
+        if ($isWebrtcForZLM.checked === true) {
+            $isWebrtcForSRS.checked = false;
+            $webrtcForSRSBySDK.checked = false;
+            $isForOthers.checked = false;
+        }
+    })
+
+    $isForOthers.addEventListener('click', function () {
+        if ($isForOthers.checked === true) {
+            $isWebrtcForSRS.checked = false;
+            $webrtcForSRSBySDK.checked = false;
+            $isWebrtcForZLM.checked = false;
+        }
+    })
+
+
+</script>
+
+</body>
+</html>

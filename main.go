@@ -22,6 +22,7 @@ func main() {
 	router.StaticFS("/js", http.Dir("./js"))
 	router.StaticFS("/jpg", http.Dir("./jpg"))
 	router.StaticFS("/css", http.Dir("./css"))
+	router.StaticFS("/jessibuca-pro", http.Dir("./jessibuca-pro"))
 	router.GET("/", HandleIndex)
 	router.GET("/index.html", HandleIndex)
 	router.GET("/jessibuca.html", HandleJessibuca)

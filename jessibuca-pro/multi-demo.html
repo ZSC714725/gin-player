@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Jessibuca Pro 不规则多屏 demo</title>
+    <link rel="stylesheet" href="./demo.css">
+    <style>
+        .container-shell:before {
+            content: "jessibuca pro mobile demo";
+        }
+    </style>
+    <script src="./vconsole.js"></script>
+    <script src="./js/jessibuca-pro-multi-demo.js"></script>
+</head>
+<body class="page">
+<div class="root">
+    <div class="container-shell">
+        <div id="container"></div>
+        <div class="input">
+            <div>
+                当前浏览器：
+                <span id="mseSupport264" style="color: green;display: none">支持MSE H264解码；</span>
+                <span id="mseSupport" style="color: green;display: none">支持MSE H265解码；</span>
+                <span id="mseNotSupport264" style="color: red;display: none">不支持MSE H264解码；</span>
+                <span id="mseNotSupport"
+                      style="color: red;display: none">不支持MSE H265解码,会自动切换成wasm解码；</span>
+            </div>
+        </div>
+        <div class="input">
+            <div>
+                当前浏览器：
+                <span id="wcsSupport264" style="color: green;display: none">支持Webcodecs H264解码；</span>
+                <span id="wcsSupport" style="color: green;display: none">支持Webcodecs H265解码（不一定准确）；</span>
+                <span id="wcsNotSupport264"
+                      style="color: red;display: none">不支持Webcodecs H264解码(https/localhost)；</span>
+                <span id="wcsNotSupport" style="color: red;display: none">不支持Webcodecs H265解码(https/localhost),会自动切换成wasm解码</span>
+            </div>
+        </div>
+        <div class="input">
+            <div>
+                当前浏览器：
+                <span id="simdSupport" style="color: green;display: none">支持WASM SIMD解码</span>
+                <span id="simdNotSupport"
+                      style="color: red;display: none">不支持WASM SIMD解码,会自动切换成wasm解码</span>
+            </div>
+        </div>
+        <div class="input">
+            <button onclick="updateSplit(1)">1*1</button>
+            <button onclick="updateSplit(2)">2*2</button>
+            <button onclick="updateSplit(3)">3*3</button>
+            <button onclick="updateSplit(4)">4*4</button>
+            <button onclick="updateSplitSpecial('3-1')">不规则(3-1)</button>
+            <button onclick="updateSplitSpecial('4-1')">不规则(4-1)</button>
+            <div>
+                <input
+                    type="checkbox"
+                    onchange="replay()"
+                    id="supportDraggable"
+                /><span>支持拖拽</span>
+                <input
+                    type="checkbox"
+                    onchange="replay()"
+                    id="supportContainerFullscreen"
+                /><span>支持双击container内全屏</span>
+            </div>
+        </div>
+        <div class="input">
+            <div>
+                <span>选择：</span>
+                <select id="windowIndex" style="width: 140px">
+                    <option value="0" selected>第1屏</option>
+                    <option value="1">第2屏</option>
+                    <option value="2">第3屏</option>
+                    <option value="3">第4屏</option>
+                    <option value="4">第5屏</option>
+                    <option value="5">第6屏</option>
+                    <option value="6">第7屏</option>
+                    <option value="7">第8屏</option>
+                    <option value="8">第9屏</option>
+                    <option value="9">第10屏</option>
+                    <option value="10">第11屏</option>
+                    <option value="11">第12屏</option>
+                    <option value="12">第13屏</option>
+                    <option value="13">第14屏</option>
+                    <option value="14">第15屏</option>
+                    <option value="15">第16屏</option>
+                </select>
+                <button onclick="handleSelectWindow()">选中</button>
+                <button onclick="handleGetSelectWindow()">获取当前选择窗口</button>
+                <button onclick="handleInitPlayerBySelectWindow()">初始化当前窗口播放器</button>
+                <button onclick="handleErrorMessage()">显示错误信息</button>
+            </div>
+        </div>
+        <div class="input">
+            <div>输入URL：</div>
+            <input
+                autocomplete="on"
+                id="playUrl"
+                value=""
+            />
+            <button id="play">播放</button>
+            <button id="pause">停止</button>
+        </div>
+        <div class="input" style="line-height: 30px">
+            <button id="destroy">销毁(ALL)</button>
+            <button id="destroySingle">销毁(选中)</button>
+            <button id="fullscreenMulti">全屏(ALL)</button>
+        </div>
+    </div>
+</div>
+<script src="./demo.js"></script>
+<script>
+    var $container = document.getElementById('container');
+    var $player = document.getElementById('play');
+    var $pause = document.getElementById('pause');
+    var $playHref = document.getElementById('playUrl');
+    var $destroy = document.getElementById('destroy');
+    var $destroySingle = document.getElementById('destroySingle');
+    var $fullscreenMulti = document.getElementById('fullscreenMulti');
+    var $supportDraggable = document.getElementById('supportDraggable');
+    var $supportContainerFullscreen = document.getElementById('supportContainerFullscreen');
+
+    let jessibucaMulti = null;
+    var showOperateBtns = true; // 是否显示按钮
+
+    function create() {
+        jessibucaMulti = new JessibucaProMulti({
+            container: $container,
+            split: 2,// default
+            isResize: false,
+            decoder: './js/decoder-pro.js',
+            debug: true,
+            useMSE: true,
+            decoderErrorAutoWasm: false,
+            useSIMD: true,
+            debugLevel: "debug",
+            hasAudio: false,
+            loadingTimeout: 3,
+            loadingTimeoutReplayTimes: 10,
+            showBandwidth: showOperateBtns, // 显示网速
+            showPerformance: showOperateBtns, // 显示性能
+            operateBtns: {
+                fullscreen: showOperateBtns,
+                screenshot: showOperateBtns,
+                play: showOperateBtns,
+                audio: showOperateBtns,
+                record: showOperateBtns,
+                ptz: showOperateBtns,
+                quality: showOperateBtns,
+                performance: showOperateBtns,
+            },
+            draggable: $supportDraggable.checked === true,
+            supportDblclickContainerFullscreen: $supportContainerFullscreen.checked === true,
+            // supportMousemoveEvent: true,
+        })
+
+        jessibucaMulti.on(JessibucaProMulti.MULTI_EVENTS.selected, (selectedIndex) => {
+            console.log('selected', selectedIndex);
+        })
+
+        jessibucaMulti.on(JessibucaProMulti.MULTI_EVENTS.dblSelected, (selectedIndex) => {
+            console.log('dblSelected', selectedIndex);
+        })
+
+        jessibucaMulti.on(JessibucaProMulti.MULTI_EVENTS.mouseover, (selectedIndex) => {
+            console.log('mouseOver', selectedIndex);
+        })
+
+        jessibucaMulti.on(JessibucaProMulti.MULTI_EVENTS.mouseout, (selectedIndex) => {
+            console.log('mouseOut', selectedIndex);
+        })
+
+        jessibucaMulti.on(JessibucaProMulti.MULTI_EVENTS.mouseup, (selectedIndex) => {
+            console.log('mouseUp', selectedIndex);
+        })
+
+        jessibucaMulti.on(JessibucaProMulti.MULTI_EVENTS.mousedown, (selectedIndex) => {
+            console.log('mousedown', selectedIndex);
+        })
+
+        jessibucaMulti.on(JessibucaProMulti.MULTI_EVENTS.mousemove, (selectedIndex) => {
+            console.log('mousemove', selectedIndex);
+        })
+
+        jessibucaMulti.on(JessibucaProMulti.EVENTS.stats, (index, stats) => {
+            console.log(`stats-${index}`, stats);
+        })
+
+        jessibucaMulti.on(JessibucaProMulti.EVENTS.error, (selectedIndex, errorType, message) => {
+            console.error('error', selectedIndex, errorType, message);
+        })
+
+        jessibucaMulti.on(JessibucaProMulti.MULTI_EVENTS.drop, (selectedIndex, event, options) => {
+            console.log('drop', selectedIndex, options);
+            updateExtendDom();
+        })
+    }
+
+    create();
+    updateExtendDom();
+
+    function updateExtendDom() {
+        const playerUUidList = jessibucaMulti.getWindowUuidList();
+        playerUUidList.forEach((uuid, index) => {
+            const playerItem = jessibucaMulti.getWindowItem(uuid);
+            const player = playerItem.player;
+            if (player) {
+                player.setExtendHtml(`<div style="color: red;position: absolute;left: 20px;top: 20px;font-size: 16px">
+                                        <span>排序Index：${playerItem.order || playerItem.index}</span>
+                                        <br>
+                                        <span>Uuid：${playerItem.uuid}</span>
+                                    </div>`)
+            }
+        })
+    }
+
+    function play() {
+        var href = $playHref.value;
+        if (href) {
+            jessibucaMulti.play(href);
+        } else {
+            handleErrorMessage('播放地址不能为空')
+        }
+    }
+
+    function replay() {
+        if (jessibucaMulti) {
+            jessibucaMulti.destroy().then(() => {
+                create();
+                play();
+            });
+        } else {
+            create();
+            play();
+        }
+
+    }
+
+    $player.addEventListener('click', function () {
+        play();
+    }, false)
+
+
+    $pause.addEventListener('click', function () {
+        if (jessibucaMulti) {
+            jessibucaMulti.pause();
+        }
+    })
+
+    $destroy.addEventListener('click', function () {
+        if (jessibucaMulti) {
+            jessibucaMulti.destroy().then(() => {
+                jessibucaMulti = null;
+                create();
+            });
+        } else {
+            create();
+        }
+    })
+
+    $destroySingle.addEventListener('click', function () {
+        if (jessibucaMulti) {
+            jessibucaMulti.destroySingle();
+        }
+    })
+
+    // multi 全屏
+    $fullscreenMulti.addEventListener('click', function () {
+        if (jessibucaMulti) {
+            jessibucaMulti.setFullscreenMulti(true);
+        }
+    })
+
+
+    function updateSplit(split) {
+        if (jessibucaMulti) {
+            split = Number(split);
+            jessibucaMulti.arrangeWindow(split);
+            updateExtendDom();
+        }
+    }
+
+    function updateSplitSpecial(type) {
+        if (jessibucaMulti) {
+            jessibucaMulti.arrangeWindow(type);
+            updateExtendDom();
+        }
+    }
+
+    function handleSelectWindow() {
+        if (jessibucaMulti) {
+            const index = document.getElementById('windowIndex').value
+            jessibucaMulti.selectWindow(Number(index));
+        }
+    }
+
+    function handleGetSelectWindow() {
+        if (jessibucaMulti) {
+            const index = jessibucaMulti.getSelectedWindowIndex();
+            console.log('当前选中窗口下标：', index);
+        }
+    }
+
+    function handleInitPlayerBySelectWindow() {
+        if (jessibucaMulti) {
+            jessibucaMulti.initSingle().then(() => {
+                updateExtendDom();
+            }).catch((e) => {
+
+            });
+        }
+    }
+
+
+    function handleErrorMessage(msg) {
+        if (jessibucaMulti) {
+            // 判断是否已经初始化了player 了。
+            const isWindowItemHasInitPlayer = jessibucaMulti.isWindowItemHasInitPlayer();
+            msg = msg || '我是错误信息';
+            if (isWindowItemHasInitPlayer) {
+                jessibucaMulti.showErrorMessageTips(msg);
+            } else {
+                jessibucaMulti.initSingle().then(() => {
+                    jessibucaMulti.showErrorMessageTips(msg);
+                })
+            }
+        }
+    }
+
+</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>暗水印（数字水印）检查</title>
+    <script src="./js/jessibuca-pro-demo.js"></script>
+</head>
+<body>
+<input type="file">
+<div style="margin-top: 10px">
+    copyright内容：<input type="text" id="copyright" style="width: 300px" placeholder="输入暗水印的内容：可以是公司名称，版本信息等">
+</div>
+<div id="watermarkResult"></div>
+<script>
+    const JessibucaPro = window.JessibucaPro;
+    const $copyright = document.getElementById('copyright');
+    var canvas = document.createElement('canvas');
+    var context = canvas.getContext("2d");
+    document.querySelector('input').addEventListener('change', function (e) {
+        var file = e.target.files[0];
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            var image = new Image();
+            image.src = e.target.result;
+            image.onload = function () {
+                console.log(image.width, image.height);
+                canvas.width = image.width;
+                canvas.height = image.height;
+                context.drawImage(image, 0, 0);
+                var copyright = $copyright.value;
+                var hashValue = JessibucaPro.getCopyrightWatermarkHash(copyright)
+                // putImageData 重新绘制imageData
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                var extractedWatermarkValue = JessibucaPro.extractScreenshotCopyrightWatermark(imageData.data, hashValue);
+                document.getElementById('watermarkResult').innerHTML = `
+                    暗水印（数字水印）文本 : ${copyright} </br>
+                    暗水印（数字水印）hash值 : ${hashValue} </br>
+                    解开的（数字水印）hash : ${extractedWatermarkValue} <br/>
+            `
+            };
+        };
+        reader.readAsDataURL(file);
+    });
+</script>
+</body>
+</html>
