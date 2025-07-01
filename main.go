@@ -18,21 +18,27 @@ var whepTpl string
 
 func main() {
 	router := gin.Default()
-	router.LoadHTMLGlob("templates/*")
+	router.LoadHTMLGlob("templates/*.html")
 	router.StaticFS("/js", http.Dir("./js"))
 	router.StaticFS("/jpg", http.Dir("./jpg"))
 	router.StaticFS("/css", http.Dir("./css"))
+	router.GET("/", HandleIndex)
+	router.GET("/index.html", HandleIndex)
 	router.GET("/jessibuca.html", HandleJessibuca)
 	router.GET("/mpegts.html", HandleMpegts)
 	router.GET("/hlsjs.html", HandleHlsjs)
-	router.GET("/whip", HandleWebRtcjs)
-	router.GET("/whep", HandleWebRtcjs)
+	router.GET("/whip.html", HandleWhip)
+	router.GET("/whep.html", HandleWhep)
 	router.GET("/rtsp.html", HandleRtspOverWebsocket)
 	router.GET("/las.html", HandleLas)
 	router.GET("/flvjs.html", HandleFlvjs)
 	router.GET("/favicon.ico", HandleFavicon)
 
 	router.Run(":8080")
+}
+
+func HandleIndex(c *gin.Context) {
+	c.HTML(200, "index.html", nil)
 }
 
 func HandleJessibuca(c *gin.Context) {
@@ -61,6 +67,14 @@ func HandleLas(c *gin.Context) {
 
 func HandleFlvjs(c *gin.Context) {
 	c.HTML(200, "flvjs.html", nil)
+}
+
+func HandleWhip(c *gin.Context) {
+	c.HTML(200, "whip.html", nil)
+}
+
+func HandleWhep(c *gin.Context) {
+	c.HTML(200, "whep.html", nil)
 }
 
 type WebRtcInfo struct {
