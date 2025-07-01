@@ -237,18 +237,18 @@
                 <a href="rtsp.html" class="btn">进入播放器</a>
             </div>
 
-            <div class="player-card" onclick="promptForUrl('whep')">
+            <div class="player-card" data-type="whep">
                 <span class="icon whep-icon">📡</span>
                 <h3>WHEP</h3>
                 <p>WebRTC-HTTP Egress Protocol 播放器</p>
-                <a href="javascript:void(0)" class="btn" onclick="promptForUrl('whep')">进入播放器</a>
+                <a href="javascript:void(0)" class="btn">进入播放器</a>
             </div>
 
-            <div class="player-card" onclick="promptForUrl('whip')">
+            <div class="player-card" data-type="whip">
                 <span class="icon whip-icon">📤</span>
                 <h3>WHIP</h3>
                 <p>WebRTC-HTTP Ingest Protocol 推流器</p>
-                <a href="javascript:void(0)" class="btn" onclick="promptForUrl('whip')">进入播放器</a>
+                <a href="javascript:void(0)" class="btn">进入播放器</a>
             </div>
         </div>
 
@@ -261,6 +261,15 @@
         // 添加点击效果
         document.querySelectorAll('.player-card').forEach(card => {
             card.addEventListener('click', function(e) {
+                // 检查是否是 WHIP 或 WHEP 卡片
+                const type = this.getAttribute('data-type');
+                if (type === 'whip' || type === 'whep') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    promptForUrl(type);
+                    return;
+                }
+                
                 // 如果点击的是按钮，不阻止默认行为
                 if (e.target.classList.contains('btn')) {
                     return;
@@ -308,18 +317,35 @@
             card.setAttribute('tabindex', '0');
         });
 
+        // 为 WHIP 和 WHEP 按钮添加点击事件
+        document.querySelectorAll('.player-card[data-type="whip"] .btn, .player-card[data-type="whep"] .btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const type = this.closest('.player-card').getAttribute('data-type');
+                promptForUrl(type);
+            });
+        });
+
         // 提示用户输入URL的函数
         function promptForUrl(type) {
             const typeName = type === 'whep' ? 'WHEP' : 'WHIP';
             const placeholder = type === 'whep' 
-                ? '例如: https://your-server.com/whep/stream-key' 
-                : '例如: https://your-server.com/whip/stream-key';
+                ? '例如: http://127.0.0.1:8080/live/test110.whep' 
+                : '例如: http://127.0.0.1:8080/live/test110.whip';
             
             const url = prompt(`请输入${typeName}服务器地址:`, placeholder);
             
             if (url && url.trim()) {
-                // 跳转到对应的页面并传递URL参数
-                window.location.href = `${type}?url=${encodeURIComponent(url.trim())}`;
+                // 获取当前页面的协议、域名和端口
+                const currentLocation = window.location;
+                const baseUrl = `${currentLocation.protocol}//${currentLocation.host}`;
+                
+                // 构建目标URL，不进行URL编码
+                const targetUrl = `${baseUrl}/${type}?url=${url.trim()}`;
+                
+                // 跳转到对应的页面
+                window.location.href = targetUrl;
             }
         }
     </script>
