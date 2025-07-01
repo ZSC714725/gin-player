@@ -237,18 +237,18 @@
                 <a href="rtsp.html" class="btn">进入播放器</a>
             </div>
 
-            <div class="player-card" onclick="window.location.href='whep.html'">
+            <div class="player-card" onclick="promptForUrl('whep')">
                 <span class="icon whep-icon">📡</span>
                 <h3>WHEP</h3>
                 <p>WebRTC-HTTP Egress Protocol 播放器</p>
-                <a href="whep.html" class="btn">进入播放器</a>
+                <a href="javascript:void(0)" class="btn" onclick="promptForUrl('whep')">进入播放器</a>
             </div>
 
-            <div class="player-card" onclick="window.location.href='whip.html'">
+            <div class="player-card" onclick="promptForUrl('whip')">
                 <span class="icon whip-icon">📤</span>
                 <h3>WHIP</h3>
                 <p>WebRTC-HTTP Ingest Protocol 推流器</p>
-                <a href="whip.html" class="btn">进入播放器</a>
+                <a href="javascript:void(0)" class="btn" onclick="promptForUrl('whip')">进入播放器</a>
             </div>
         </div>
 
@@ -307,6 +307,21 @@
         document.querySelectorAll('.player-card').forEach(card => {
             card.setAttribute('tabindex', '0');
         });
+
+        // 提示用户输入URL的函数
+        function promptForUrl(type) {
+            const typeName = type === 'whep' ? 'WHEP' : 'WHIP';
+            const placeholder = type === 'whep' 
+                ? '例如: https://your-server.com/whep/stream-key' 
+                : '例如: https://your-server.com/whip/stream-key';
+            
+            const url = prompt(`请输入${typeName}服务器地址:`, placeholder);
+            
+            if (url && url.trim()) {
+                // 跳转到对应的页面并传递URL参数
+                window.location.href = `${type}?url=${encodeURIComponent(url.trim())}`;
+            }
+        }
     </script>
 </body>
 </html> 

@@ -68,17 +68,38 @@ docker run -it -p 8080:8080 gin-player:latest
 - 点击任意卡片即可跳转到对应播放器
 
 ### WHIP 推流器
-1. 访问 `/whip.html`
-2. 输入 WHIP 服务器地址
-3. 点击"开始推流"按钮
-4. 允许浏览器访问摄像头和麦克风
-5. 开始推流到服务器
+支持三种访问方式：
+
+1. **从首页访问**：
+   - 在首页点击 WHIP 卡片
+   - 在弹出的对话框中输入 WHIP 服务器地址
+   - 自动跳转到推流器页面并填充地址
+   - 点击"开始推流"按钮开始推流
+
+2. **直接访问**：`http://localhost:8080/whip.html`
+   - 手动输入 WHIP 服务器地址
+   - 点击"开始推流"按钮开始推流
+
+3. **带参数访问**：`http://localhost:8080/whip?url=your-whip-url`
+   - 自动填充 WHIP 服务器地址
+   - 点击"开始推流"按钮即可开始推流
 
 ### WHEP 播放器
-1. 访问 `/whep.html`
-2. 输入 WHEP 服务器地址
-3. 点击"开始播放"按钮
-4. 开始播放远程视频流
+支持三种访问方式：
+
+1. **从首页访问**：
+   - 在首页点击 WHEP 卡片
+   - 在弹出的对话框中输入 WHEP 服务器地址
+   - 自动跳转到播放器页面并填充地址
+   - 点击"开始播放"按钮开始播放
+
+2. **直接访问**：`http://localhost:8080/whep.html`
+   - 手动输入 WHEP 服务器地址
+   - 点击"开始播放"按钮开始播放
+
+3. **带参数访问**：`http://localhost:8080/whep?url=your-whep-url`
+   - 自动填充 WHEP 服务器地址
+   - 点击"开始播放"按钮即可开始播放
 
 ### Jessibuca Pro 播放器
 Jessibuca Pro 是专业版低延迟播放器，提供以下高级功能：
@@ -131,7 +152,9 @@ Jessibuca Pro 是专业版低延迟播放器，提供以下高级功能：
 | LAS | http://localhost:8080/las.html | 自适应流媒体播放器 |
 | RTSP | http://localhost:8080/rtsp.html | RTSP over WebSocket |
 | WHEP | http://localhost:8080/whep.html | WebRTC 播放器 |
+| WHEP (带参数) | http://localhost:8080/whep?url=your-whep-url | WebRTC 播放器 (自动填充地址) |
 | WHIP | http://localhost:8080/whip.html | WebRTC 推流器 |
+| WHIP (带参数) | http://localhost:8080/whip?url=your-whip-url | WebRTC 推流器 (自动填充地址) |
 
 ## 📄 LAS 协议配置示例
 
