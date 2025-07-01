@@ -4,7 +4,7 @@
 
 ## ✨ 特性
 
-- 🎯 **多协议支持**：支持 HLS、HTTP-FLV、MPEG-TS、RTSP、LAS、WHIP、WHEP 等多种流媒体协议
+- 🎯 **多协议支持**：支持 HLS、HTTP-FLV、MPEG-TS、RTSP、LAS、WHEP 等多种流媒体协议
 - 🚀 **低延迟播放**：专为实时流媒体优化，支持超低延迟播放
 - 🎨 **现代化界面**：美观的响应式设计，支持键盘导航
 - 🔧 **易于使用**：直观的用户界面，无需复杂配置
@@ -24,7 +24,6 @@
 | **LAS** | LAS | 轻量级自适应流媒体播放器 | `/las.html` |
 | **RTSP** | RTSP over WebSocket | RTSP 协议播放器 | `/rtsp.html` |
 | **WHEP** | WebRTC | WebRTC-HTTP Egress Protocol 播放器 | `/whep.html` |
-| **WHIP** | WebRTC | WebRTC-HTTP Ingest Protocol 推流器 | `/whip.html` |
 
 ## 🚀 快速开始
 
@@ -66,23 +65,6 @@ docker run -it -p 8080:8080 gin-player:latest
 - 支持键盘导航（方向键、回车键）
 - 响应式设计，适配不同屏幕尺寸
 - 点击任意卡片即可跳转到对应播放器
-
-### WHIP 推流器
-支持三种访问方式：
-
-1. **从首页访问**：
-   - 在首页点击 WHIP 卡片
-   - 在弹出的对话框中输入 WHIP 服务器地址
-   - 自动跳转到推流器页面并填充地址
-   - 点击"开始推流"按钮开始推流
-
-2. **直接访问**：`http://localhost:8080/whip.html`
-   - 手动输入 WHIP 服务器地址
-   - 点击"开始推流"按钮开始推流
-
-3. **带参数访问**：`http://localhost:8080/whip?url=your-whip-url`
-   - 自动填充 WHIP 服务器地址
-   - 点击"开始推流"按钮即可开始推流
 
 ### WHEP 播放器
 支持三种访问方式：
@@ -153,8 +135,6 @@ Jessibuca Pro 是专业版低延迟播放器，提供以下高级功能：
 | RTSP | http://localhost:8080/rtsp.html | RTSP over WebSocket |
 | WHEP | http://localhost:8080/whep.html | WebRTC 播放器 |
 | WHEP (带参数) | http://localhost:8080/whep?url=your-whep-url | WebRTC 播放器 (自动填充地址) |
-| WHIP | http://localhost:8080/whip.html | WebRTC 推流器 |
-| WHIP (带参数) | http://localhost:8080/whip?url=your-whip-url | WebRTC 推流器 (自动填充地址) |
 
 ## 📄 LAS 协议配置示例
 

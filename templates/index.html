@@ -177,7 +177,6 @@
         .las-icon { color: #feca57; }
         .rtsp-icon { color: #ff9ff3; }
         .whep-icon { color: #54a0ff; }
-        .whip-icon { color: #5f27cd; }
     </style>
 </head>
 <body>
@@ -244,12 +243,7 @@
                 <a href="javascript:void(0)" class="btn">进入播放器</a>
             </div>
 
-            <div class="player-card" data-type="whip">
-                <span class="icon whip-icon">📤</span>
-                <h3>WHIP</h3>
-                <p>WebRTC-HTTP Ingest Protocol 推流器</p>
-                <a href="javascript:void(0)" class="btn">进入播放器</a>
-            </div>
+
         </div>
 
         <div class="footer">
@@ -261,9 +255,9 @@
         // 添加点击效果
         document.querySelectorAll('.player-card').forEach(card => {
             card.addEventListener('click', function(e) {
-                // 检查是否是 WHIP 或 WHEP 卡片
+                // 检查是否是 WHEP 卡片
                 const type = this.getAttribute('data-type');
-                if (type === 'whip' || type === 'whep') {
+                if (type === 'whep') {
                     e.preventDefault();
                     e.stopPropagation();
                     promptForUrl(type);
@@ -317,8 +311,8 @@
             card.setAttribute('tabindex', '0');
         });
 
-        // 为 WHIP 和 WHEP 按钮添加点击事件
-        document.querySelectorAll('.player-card[data-type="whip"] .btn, .player-card[data-type="whep"] .btn').forEach(btn => {
+        // 为 WHEP 按钮添加点击事件
+        document.querySelectorAll('.player-card[data-type="whep"] .btn').forEach(btn => {
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -329,10 +323,8 @@
 
         // 提示用户输入URL的函数
         function promptForUrl(type) {
-            const typeName = type === 'whep' ? 'WHEP' : 'WHIP';
-            const placeholder = type === 'whep' 
-                ? '例如: http://127.0.0.1:8080/live/test110.whep' 
-                : '例如: http://127.0.0.1:8080/live/test110.whip';
+            const typeName = 'WHEP';
+            const placeholder = '例如: http://127.0.0.1:8080/live/test110.whep';
             
             const url = prompt(`请输入${typeName}服务器地址:`, placeholder);
             
