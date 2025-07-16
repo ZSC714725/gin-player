@@ -44,7 +44,7 @@ go run main.go
 ```
 
 ### 4. 访问首页
-打开浏览器访问：http://localhost:8080
+打开浏览器访问：http://localhost:8080/index.html
 
 ## 🐳 Docker 运行
 
