@@ -34,7 +34,7 @@ func main() {
 	router.GET("/flvjs.html", HandleFlvjs)
 	router.GET("/favicon.ico", HandleFavicon)
 
-	router.Run(":8087")
+	router.Run(":8080")
 }
 
 func HandleIndex(c *gin.Context) {

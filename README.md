@@ -61,7 +61,7 @@ docker run -it -p 8080:8080 gin-player:latest
 ## 📱 使用指南
 
 ### 首页导航
-访问 http://localhost:8080 可以看到所有播放器的卡片界面：
+访问 http://localhost:8080/index.html 可以看到所有播放器的卡片界面：
 - 支持键盘导航（方向键、回车键）
 - 响应式设计，适配不同屏幕尺寸
 - 点击任意卡片即可跳转到对应播放器
