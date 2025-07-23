@@ -54,7 +54,7 @@
 
         .players-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 20px;
             margin-top: 30px;
         }
@@ -199,6 +199,13 @@
                 <h3>HLS.js</h3>
                 <p>HTTP Live Streaming (HLS) 播放器，支持自适应码率</p>
                 <a href="hlsjs.html" class="btn">进入播放器</a>
+            </div>
+
+            <div class="player-card" onclick="window.location.href='/dash/index.html'">
+                <span class="icon" style="color:#1e90ff;">🎬</span>
+                <h3>dash.js</h3>
+                <p>开源 JavaScript 实现的 MPEG-DASH 协议播放器，支持自适应流媒体播放</p>
+                <a href="/dash/index.html" class="btn">进入播放器</a>
             </div>
 
             <div class="player-card" onclick="window.location.href='mpegts.html'">

@@ -17,6 +17,7 @@
 |--------|----------|------|----------|
 | **FLV.js** | HTTP-FLV | 基于 HTML5 的 FLV 播放器 | `/flvjs.html` |
 | **HLS.js** | HLS | HTTP Live Streaming 播放器 | `/hlsjs.html` |
+| **dash.js** | MPEG-DASH | 开源 DASH 协议播放器 | `/dash/index.html` |
 | **MPEG-TS** | MPEG2-TS/FLV | 基于 flv.js 的低延迟播放器 | `/mpegts.html` |
 | **Jessibuca** | HTTP-FLV | 超低延迟视频播放器 | `/jessibuca.html` |
 | **Jessibuca Pro** | HTTP-FLV/HLS/MP4 | 专业版低延迟播放器，支持AI检测 | `/jessibuca-pro/` |
@@ -24,6 +25,14 @@
 | **LAS** | LAS | 轻量级自适应流媒体播放器 | `/las.html` |
 | **RTSP** | RTSP over WebSocket | RTSP 协议播放器 | `/rtsp.html` |
 | **WHEP** | WebRTC | WebRTC-HTTP Egress Protocol 播放器 | `/whep.html` |
+
+### dash.js 播放器
+- **协议支持**：MPEG-DASH
+- **特性**：开源、支持自适应码率、丰富的播放和调试功能
+- **访问方式**：
+  - 主页卡片点击 dash.js
+  - 直接访问：http://localhost:8080/dash/index.html
+- **依赖说明**：所有依赖静态资源均已放置在 dash 目录下，无需额外配置
 
 ## 🚀 快速开始
 
@@ -113,6 +122,7 @@ Jessibuca Pro 是专业版低延迟播放器，提供以下高级功能：
 - **播放器库**：
   - [flv.js](https://github.com/bilibili/flv.js) - HTTP-FLV 播放
   - [hls.js](https://github.com/video-dev/hls.js) - HLS 播放
+  - [dash.js](https://github.com/Dash-Industry-Forum/dash.js) - MPEG-DASH 播放
   - [mpegts.js](https://github.com/xqq/mpegts.js) - MPEG-TS 播放
   - [jessibuca](https://github.com/langhuihui/jessibuca) - 低延迟播放
   - [jessibuca-pro](https://github.com/langhuihui/jessibuca-pro) - 专业版低延迟播放器，支持AI检测
@@ -130,6 +140,7 @@ Jessibuca Pro 是专业版低延迟播放器，提供以下高级功能：
 | MPEG-TS | http://localhost:8080/mpegts.html | MPEG2-TS/FLV 播放器 |
 | Jessibuca | http://localhost:8080/jessibuca.html | 低延迟播放器 |
 | Jessibuca Pro | http://localhost:8080/jessibuca-pro/ | 专业版低延迟播放器 |
+| dash.js | http://localhost:8080/dash/index.html | MPEG-DASH 协议播放器 |
 
 | LAS | http://localhost:8080/las.html | 自适应流媒体播放器 |
 | RTSP | http://localhost:8080/rtsp.html | RTSP over WebSocket |
