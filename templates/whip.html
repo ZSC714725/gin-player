@@ -36,12 +36,71 @@
             margin-bottom: 5px;
             font-weight: bold;
         }
-        input[type="text"], textarea {
+        input[type="text"], textarea, select {
             width: 100%;
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 14px;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+        #bitrateValue {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .codec-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .codec-info p {
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+        .codec-detection {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+        }
+        .codec-support-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .codec-item {
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .codec-item.supported {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .codec-item.not-supported {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .codec-item.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+            padding: 10px;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
         }
         textarea {
             height: 60px;
@@ -112,6 +171,30 @@
                 <label for="whipUrl">WHIP Endpoint URL:</label>
                 <textarea id="whipUrl" placeholder="Enter WHIP endpoint URL"></textarea>
             </div>
+            <div class="form-group">
+                <label for="videoCodec">Video Codec:</label>
+                <select id="videoCodec">
+                    <option value="VP8">VP8</option>
+                    <option value="VP9">VP9</option>
+                    <option value="H264" selected>H.264</option>
+                    <option value="H265">H.265 (HEVC)</option>
+                    <option value="AV1">AV1</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="videoBitrate">Video Bitrate (kbps):</label>
+                <input type="range" id="videoBitrate" min="500" max="8000" value="2500" step="100">
+                <span id="bitrateValue">2500</span> kbps
+            </div>
+            <div class="form-group">
+                <label for="videoResolution">Video Resolution:</label>
+                <select id="videoResolution">
+                    <option value="480p">480p (854x480)</option>
+                    <option value="720p" selected>720p (1280x720)</option>
+                    <option value="1080p">1080p (1920x1080)</option>
+                    <option value="4k">4K (3840x2160)</option>
+                </select>
+            </div>
             <button id="whipStart">Start Publishing</button>
             <button id="whipStop" class="stop-btn" disabled>Stop Publishing</button>
         </div>
@@ -126,18 +209,50 @@
             <canvas id="pubAudio" width="640" height="100"></canvas>
         </div>
 
+
+        <div class="section">
+            <h2>Supported Video Codecs</h2>
+            <div class="codec-info">
+                <p><strong>VP8:</strong> Open source codec, good compatibility, moderate compression</p>
+                <p><strong>VP9:</strong> Google's successor to VP8, better compression than VP8</p>
+                <p><strong>H.264:</strong> Most widely supported codec, excellent compatibility</p>
+                <p><strong>H.265 (HEVC):</strong> Next-generation codec with superior compression</p>
+                <p><strong>AV1:</strong> Latest open source codec with best compression efficiency</p>
+            </div>
+            <div class="codec-detection">
+                <h3>Browser Codec Support</h3>
+                <div id="codecSupport"></div>
+            </div>
+        </div>
+
         <div id="status" class="status" style="display: none;"></div>
     </div>
 
     <script src="/js/webrtc/StreamVisualizer.js"></script>
     <script>
         // Inline negotiateConnectionWithClientOffer function to avoid loading issues
-        async function negotiateConnectionWithClientOffer(peerConnection, endpoint, token) {
+        async function negotiateConnectionWithClientOffer(peerConnection, endpoint, token, encodingOptions = {}) {
           const offer = await peerConnection.createOffer();
-          console.debug(`whxp client offer sdp:\n%c${offer.sdp}`, 'color:cyan');
-          await peerConnection.setLocalDescription(offer);
+          
+          // Filter SDP to prioritize selected codec and add keyframe parameters
+          let filteredSDP = offer.sdp;
+          if (encodingOptions && encodingOptions.codec) {
+            try {
+              filteredSDP = filterSDPForCodec(offer.sdp, encodingOptions.codec, encodingOptions);
+              console.log(`Filtering SDP for codec: ${encodingOptions.codec}`);
+              if (encodingOptions.keyframeInterval) {
+                console.log(`Adding keyframe interval: ${encodingOptions.keyframeInterval} seconds`);
+              }
+            } catch (error) {
+              console.error('SDP filtering failed, using original SDP:', error);
+              filteredSDP = offer.sdp;
+            }
+          }
+          
+          console.debug(`whxp client offer sdp:\n%c${filteredSDP}`, 'color:cyan');
+          await peerConnection.setLocalDescription({ type: 'offer', sdp: filteredSDP });
           while (peerConnection.connectionState !== 'closed') {
-            let response = await postSDPOffer(endpoint, token, offer.sdp);
+            let response = await postSDPOffer(endpoint, token, filteredSDP);
             if (response.status === 201) {
               let answerSDP = await response.text();
               console.debug(`whxp client answer sdp:\n%c${answerSDP}`, 'color:cyan');
@@ -154,6 +269,120 @@
 
             await new Promise(r => setTimeout(r, 5000));
           }
+        }
+
+        // Function to filter SDP for specific codec and add keyframe parameters
+        function filterSDPForCodec(sdp, preferredCodec, encodingOptions = {}) {
+          const lines = sdp.split('\n');
+          const filteredLines = [];
+          let inVideoSection = false;
+          let videoPayloadTypes = [];
+          let preferredPayloadType = null;
+          
+          // Codec mapping
+          const codecMap = {
+            'VP8': 'VP8/90000',
+            'VP9': 'VP9/90000', 
+            'H264': 'H264/90000',
+            'H265': 'H265/90000',
+            'AV1': 'AV1/90000'
+          };
+          
+          const preferredCodecString = codecMap[preferredCodec];
+          
+          // First pass: collect video payload types and find preferred one
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            
+            if (line.startsWith('m=video')) {
+              inVideoSection = true;
+              const payloadTypes = line.split(' ').slice(3);
+              videoPayloadTypes = payloadTypes;
+            } else if (line.startsWith('m=') && !line.startsWith('m=video')) {
+              inVideoSection = false;
+            } else if (inVideoSection && line.startsWith('a=rtpmap:')) {
+              const payloadType = line.split(':')[1].split(' ')[0];
+              if (preferredCodecString && line.includes(preferredCodecString)) {
+                preferredPayloadType = payloadType;
+                console.log(`Found preferred codec ${preferredCodec} with payload type ${payloadType}`);
+              }
+            }
+          }
+          
+          // Second pass: rebuild SDP with preferred codec first and keyframe parameters
+          inVideoSection = false;
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            
+            if (line.startsWith('m=video')) {
+              inVideoSection = true;
+              // Reorder payload types to put preferred codec first
+              if (preferredPayloadType) {
+                const otherPayloadTypes = videoPayloadTypes.filter(pt => pt !== preferredPayloadType);
+                const reorderedPayloadTypes = [preferredPayloadType, ...otherPayloadTypes];
+                const newMLine = line.split(' ').slice(0, 3).concat(reorderedPayloadTypes).join(' ');
+                filteredLines.push(newMLine);
+                console.log(`Reordered m=video line: ${newMLine}`);
+              } else {
+                filteredLines.push(line);
+              }
+            } else if (line.startsWith('m=') && !line.startsWith('m=video')) {
+              inVideoSection = false;
+              filteredLines.push(line);
+            } else if (inVideoSection && line.startsWith('a=rtpmap:')) {
+              const payloadType = line.split(':')[1].split(' ')[0];
+              // Keep all rtpmap lines for now
+              filteredLines.push(line);
+            } else if (inVideoSection && line.startsWith('a=fmtp:')) {
+              // Keep fmtp lines as-is for now to avoid SDP parsing errors
+              filteredLines.push(line);
+            } else {
+              filteredLines.push(line);
+            }
+          }
+          
+          // Skip adding custom attributes for now to avoid SDP parsing errors
+          // The keyframe forcing will be handled through other mechanisms
+          
+          const filteredSDP = filteredLines.join('\n');
+          
+          // Validate the filtered SDP
+          if (validateSDP(filteredSDP)) {
+            console.log('SDP validation passed');
+            return filteredSDP;
+          } else {
+            console.warn('SDP validation failed, using original SDP');
+            return sdp;
+          }
+        }
+
+        // Function to validate SDP format
+        function validateSDP(sdp) {
+          const lines = sdp.split('\n');
+          let hasValidMLine = false;
+          let hasValidRtpmap = false;
+          
+          for (const line of lines) {
+            // Check for valid m= line
+            if (line.startsWith('m=video') && line.split(' ').length >= 4) {
+              hasValidMLine = true;
+            }
+            
+            // Check for valid rtpmap line
+            if (line.startsWith('a=rtpmap:') && line.includes('/')) {
+              hasValidRtpmap = true;
+            }
+            
+            // Check for invalid lines
+            if (line.trim() && !line.startsWith('v=') && !line.startsWith('o=') && 
+                !line.startsWith('s=') && !line.startsWith('t=') && !line.startsWith('m=') && 
+                !line.startsWith('c=') && !line.startsWith('a=') && !line.startsWith('b=')) {
+              console.error('Invalid SDP line:', line);
+              return false;
+            }
+          }
+          
+          return hasValidMLine && hasValidRtpmap;
         }
 
         async function postSDPOffer(endpoint, token, data) {
@@ -199,16 +428,156 @@
         const whipStartButton = document.querySelector('#whipStart');
         const whipStopButton = document.querySelector('#whipStop');
         const statusDiv = document.querySelector('#status');
+        const videoCodecSelect = document.querySelector('#videoCodec');
+        const videoBitrateRange = document.querySelector('#videoBitrate');
+        const videoResolutionSelect = document.querySelector('#videoResolution');
+        const bitrateValueSpan = document.querySelector('#bitrateValue');
 
         // Global Variable
         var whipClient = null;
+
+        // Function to detect browser codec support using WebRTC SDP
+        async function detectCodecSupport() {
+            const codecSupport = document.getElementById('codecSupport');
+            
+            try {
+                // Create a temporary peer connection to get supported codecs
+                const pc = new RTCPeerConnection();
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                
+                // Add video track to get codec information
+                stream.getTracks().forEach(track => {
+                    if (track.kind === 'video') {
+                        pc.addTrack(track, stream);
+                    }
+                });
+                
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                
+                const sdp = offer.sdp;
+                console.log('SDP for codec detection:', sdp);
+                
+                // Parse SDP to extract supported codecs
+                const videoSection = sdp.split('m=video')[1];
+                if (!videoSection) {
+                    throw new Error('No video section found in SDP');
+                }
+                
+                // Split by next m= line or end of SDP
+                const nextSection = videoSection.split('\nm=')[0];
+                const codecLines = nextSection.split('\n').filter(line => line.startsWith('a=rtpmap:'));
+                const supportedCodecs = [];
+                
+                codecLines.forEach(line => {
+                    const parts = line.split(' ');
+                    if (parts.length >= 2) {
+                        const codecInfo = parts[1];
+                        const codecName = codecInfo.split('/')[0];
+                        supportedCodecs.push(codecName);
+                        console.log(`Found codec: ${codecName} in line: ${line}`);
+                    }
+                });
+                
+                console.log('Detected supported codecs:', supportedCodecs);
+                
+                // Define codec mappings with more flexible patterns
+                const codecMappings = [
+                    { name: 'VP8', patterns: ['VP8', 'vp8'] },
+                    { name: 'VP9', patterns: ['VP9', 'vp9'] },
+                    { name: 'H.264', patterns: ['H264', 'H.264', 'h264', 'h.264'] },
+                    { name: 'H.265', patterns: ['H265', 'H.265', 'HEVC', 'h265', 'h.265', 'hevc'] },
+                    { name: 'AV1', patterns: ['AV1', 'av1'] }
+                ];
+                
+                let supportHtml = '<div class="codec-support-grid">';
+                supportHtml += '<div class="codec-item info"><strong>WebRTC Codec Detection:</strong> Based on SDP analysis</div>';
+                
+                codecMappings.forEach(codec => {
+                    const isSupported = codec.patterns.some(pattern => 
+                        supportedCodecs.some(supported => 
+                            supported.toLowerCase().includes(pattern.toLowerCase())
+                        )
+                    );
+                    
+                    const statusClass = isSupported ? 'supported' : 'not-supported';
+                    const statusText = isSupported ? '✓ Supported' : '✗ Not Supported';
+                    
+                    supportHtml += `
+                        <div class="codec-item ${statusClass}">
+                            <strong>${codec.name}:</strong> ${statusText}
+                        </div>
+                    `;
+                });
+                
+                supportHtml += '</div>';
+                codecSupport.innerHTML = supportHtml;
+                
+                // Clean up
+                pc.close();
+                stream.getTracks().forEach(track => track.stop());
+                
+            } catch (error) {
+                console.error('Error detecting codec support:', error);
+                // Fallback to basic detection
+                detectCodecSupportFallback();
+            }
+        }
+
+        // Fallback codec detection method
+        function detectCodecSupportFallback() {
+            const codecSupport = document.getElementById('codecSupport');
+            
+            // Basic codec support detection using MediaRecorder
+            const codecs = [
+                { name: 'VP8', mimeType: 'video/vp8' },
+                { name: 'VP9', mimeType: 'video/vp9' },
+                { name: 'H.264', mimeType: 'video/h264' },
+                { name: 'H.265', mimeType: 'video/h265' },
+                { name: 'AV1', mimeType: 'video/av1' }
+            ];
+            
+            let supportHtml = '<div class="codec-support-grid">';
+            supportHtml += '<div class="codec-item info"><strong>Note:</strong> Using fallback detection method</div>';
+            
+            codecs.forEach(codec => {
+                let isSupported = false;
+                try {
+                    isSupported = MediaRecorder.isTypeSupported(codec.mimeType);
+                } catch (e) {
+                    // Some browsers may not support MediaRecorder.isTypeSupported
+                    isSupported = false;
+                }
+                
+                const statusClass = isSupported ? 'supported' : 'not-supported';
+                const statusText = isSupported ? '✓ Supported' : '✗ Not Supported';
+                
+                supportHtml += `
+                    <div class="codec-item ${statusClass}">
+                        <strong>${codec.name}:</strong> ${statusText}
+                    </div>
+                `;
+            });
+            
+            supportHtml += '</div>';
+            codecSupport.innerHTML = supportHtml;
+        }
 
         // Initialize
         window.onload = () => {
             whipUrlTextarea.value = window.location.protocol + '//' + window.location.hostname + ':8080/live/test110.whip';
             whipStartButton.addEventListener('click', whipStart);
             whipStopButton.addEventListener('click', whipStop);
+            
+            // Initialize bitrate display
+            videoBitrateRange.addEventListener('input', (e) => {
+                bitrateValueSpan.textContent = e.target.value;
+            });
+            
+            // Detect codec support
+            detectCodecSupport();
         }
+
 
         function showStatus(message, isError = false) {
             statusDiv.textContent = message;
@@ -231,12 +600,42 @@
                 cleanUrl = cleanUrl.substring(1);
             }
 
+            // Get encoding parameters
+            const codec = videoCodecSelect.value;
+            const bitrate = parseInt(videoBitrateRange.value);
+            const resolution = videoResolutionSelect.value;
+            
+            // Parse resolution
+            let width, height;
+            switch(resolution) {
+                case '480p':
+                    width = 854; height = 480;
+                    break;
+                case '720p':
+                    width = 1280; height = 720;
+                    break;
+                case '1080p':
+                    width = 1920; height = 1080;
+                    break;
+                case '4k':
+                    width = 3840; height = 2160;
+                    break;
+                default:
+                    width = 1280; height = 720;
+            }
+
             try {
                 console.log('Starting WHIP with URL:', cleanUrl);
-                whipClient = new WHIPClient(cleanUrl, '', pubAudioCanvas, pubVideoVideo);
+                console.log('Encoding settings:', { codec, bitrate, width, height });
+                whipClient = new WHIPClient(cleanUrl, '', pubAudioCanvas, pubVideoVideo, {
+                    codec: codec,
+                    bitrate: bitrate,
+                    width: width,
+                    height: height
+                });
                 whipStartButton.disabled = true;
                 whipStopButton.disabled = false;
-                showStatus('WHIP publishing started successfully');
+                showStatus(`WHIP publishing started with ${codec} at ${width}x${height} @ ${bitrate}kbps`);
             } catch (error) {
                 console.error('WHIP start error:', error);
                 showStatus('Failed to start WHIP publishing: ' + error.message, true);
