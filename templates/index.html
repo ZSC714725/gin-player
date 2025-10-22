@@ -55,21 +55,32 @@
         .players-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-top: 30px;
+            gap: 40px;
+            margin-top: 40px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .player-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+            border-radius: 20px;
+            padding: 35px 25px;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
+            box-shadow: 
+                0 8px 25px rgba(0, 0, 0, 0.08),
+                0 3px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border: 1px solid rgba(255, 255, 255, 0.8);
             cursor: pointer;
             position: relative;
             overflow: hidden;
+            backdrop-filter: blur(10px);
+            width: 100%;
+            height: 350px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .player-card::before {
@@ -78,59 +89,109 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 4px;
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
             transform: scaleX(0);
-            transition: transform 0.3s ease;
+            transition: transform 0.4s ease;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .player-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+            transform: rotate(45deg) translateX(-100%);
+            transition: transform 0.6s ease;
         }
 
         .player-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-            border-color: #667eea;
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.12),
+                0 8px 25px rgba(102, 126, 234, 0.15);
+            border-color: rgba(102, 126, 234, 0.3);
         }
 
         .player-card:hover::before {
             transform: scaleX(1);
         }
 
-        .player-card h3 {
-            color: #333;
-            font-size: 1.3em;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-
-        .player-card p {
-            color: #666;
-            font-size: 0.9em;
-            line-height: 1.5;
-            margin-bottom: 15px;
+        .player-card:hover::after {
+            transform: rotate(45deg) translateX(100%);
         }
 
         .player-card .icon {
-            font-size: 2.5em;
-            margin-bottom: 15px;
+            font-size: 3em;
+            margin-bottom: 20px;
             display: block;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+            transition: transform 0.3s ease;
+        }
+
+        .player-card:hover .icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .player-card h3 {
+            color: #2c3e50;
+            font-size: 1.4em;
+            margin-bottom: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .player-card p {
+            color: #5a6c7d;
+            font-size: 0.95em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .player-card .btn {
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
-            padding: 10px 20px;
+            padding: 14px 28px;
             border: none;
-            border-radius: 25px;
-            font-size: 0.9em;
-            font-weight: 500;
+            border-radius: 30px;
+            font-size: 0.95em;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
             display: inline-block;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+            white-space: nowrap;
+            min-width: 120px;
+        }
+
+        .player-card .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
         }
 
         .player-card .btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .player-card .btn:hover::before {
+            left: 100%;
         }
 
         .footer {
@@ -142,31 +203,7 @@
             font-size: 0.9em;
         }
 
-        @media (max-width: 1200px) {
-            .players-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-        
-        @media (max-width: 900px) {
-            .players-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px;
-            }
-            
-            .header h1 {
-                font-size: 2em;
-            }
-            
-            .players-grid {
-                grid-template-columns: 1fr;
-            }
-        }
+        /* 固定3列布局，不考虑响应式 */
 
         .flv-icon { color: #ff6b6b; }
         .hls-icon { color: #4ecdc4; }
@@ -177,6 +214,7 @@
         .las-icon { color: #feca57; }
         .rtsp-icon { color: #ff9ff3; }
         .whep-icon { color: #54a0ff; }
+        .whip-icon { color: #ff6b9d; }
     </style>
 </head>
 <body>
@@ -204,14 +242,14 @@
             <div class="player-card" onclick="window.location.href='/dash/index.html'">
                 <span class="icon" style="color:#1e90ff;">🎬</span>
                 <h3>dash.js</h3>
-                <p>开源 JavaScript 实现的 MPEG-DASH 协议播放器，支持自适应流媒体播放</p>
+                <p>MPEG-DASH 协议播放器，支持自适应流媒体</p>
                 <a href="/dash/index.html" class="btn">进入播放器</a>
             </div>
 
             <div class="player-card" onclick="window.location.href='mpegts.html'">
                 <span class="icon mpegts-icon">🎞️</span>
                 <h3>MPEG-TS</h3>
-                <p>基于 flv.js 的 MPEG2-TS/FLV 播放器，专为低延迟直播优化</p>
+                <p>MPEG2-TS/FLV 播放器，专为低延迟直播优化</p>
                 <a href="mpegts.html" class="btn">进入播放器</a>
             </div>
 
@@ -225,7 +263,7 @@
             <div class="player-card" onclick="window.location.href='../jessibuca-pro/'">
                 <span class="icon jessibuca-pro-icon">🚀</span>
                 <h3>Jessibuca Pro</h3>
-                <p>专业版低延迟播放器，支持更多高级功能和AI检测</p>
+                <p>专业版低延迟播放器，支持AI检测</p>
                 <a href="../jessibuca-pro/" class="btn">进入播放器</a>
             </div>
 
@@ -243,13 +281,19 @@
                 <a href="rtsp.html" class="btn">进入播放器</a>
             </div>
 
-            <div class="player-card" data-type="whep">
+            <div class="player-card" onclick="window.location.href='whep.html'">
                 <span class="icon whep-icon">📡</span>
                 <h3>WHEP</h3>
                 <p>WebRTC-HTTP Egress Protocol 播放器</p>
-                <a href="javascript:void(0)" class="btn">进入播放器</a>
+                <a href="whep.html" class="btn">进入播放器</a>
             </div>
 
+            <div class="player-card" onclick="window.location.href='whip.html'">
+                <span class="icon whip-icon">📤</span>
+                <h3>WHIP</h3>
+                <p>WebRTC-HTTP Ingestion Protocol 发布器</p>
+                <a href="whip.html" class="btn">进入发布器</a>
+            </div>
 
         </div>
 
@@ -262,15 +306,6 @@
         // 添加点击效果
         document.querySelectorAll('.player-card').forEach(card => {
             card.addEventListener('click', function(e) {
-                // 检查是否是 WHEP 卡片
-                const type = this.getAttribute('data-type');
-                if (type === 'whep') {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    promptForUrl(type);
-                    return;
-                }
-                
                 // 如果点击的是按钮，不阻止默认行为
                 if (e.target.classList.contains('btn')) {
                     return;
@@ -318,35 +353,6 @@
             card.setAttribute('tabindex', '0');
         });
 
-        // 为 WHEP 按钮添加点击事件
-        document.querySelectorAll('.player-card[data-type="whep"] .btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                const type = this.closest('.player-card').getAttribute('data-type');
-                promptForUrl(type);
-            });
-        });
-
-        // 提示用户输入URL的函数
-        function promptForUrl(type) {
-            const typeName = 'WHEP';
-            const placeholder = '例如: http://127.0.0.1:8080/live/test110.whep';
-            
-            const url = prompt(`请输入${typeName}服务器地址:`, placeholder);
-            
-            if (url && url.trim()) {
-                // 获取当前页面的协议、域名和端口
-                const currentLocation = window.location;
-                const baseUrl = `${currentLocation.protocol}//${currentLocation.host}`;
-                
-                // 构建目标URL，不进行URL编码
-                const targetUrl = `${baseUrl}/${type}?url=${url.trim()}`;
-                
-                // 跳转到对应的页面
-                window.location.href = targetUrl;
-            }
-        }
     </script>
 </body>
 </html> 

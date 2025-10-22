@@ -1,26 +1,257 @@
-<html>
-	<head>
-		<link rel="stylesheet" href="css/webrtc.css" />
-		<!-- This adapter normalizes cross-browser differences in WebRTC APIs. Currently necessary in order to support Firefox. -->
-		<script
-			src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/8.1.2/adapter.min.js"
-			integrity="sha512-l40eBFtXx+ve5RryIELC3y6/OM6Nu89mLGQd7fg1C93tN6XrkC3supb+/YiD/Y+B8P37kdJjtG1MT1kOO2VzxA=="
-			crossorigin="anonymous"
-			referrerpolicy="no-referrer"
-		></script>
-	</head>
-	<body>
-		<h4>Broadcasting video using WHIP</h4>
-		<h5>(local mirror)</h5>
-		<video id="input-video" autoplay muted></video>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WHIP Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        textarea {
+            height: 60px;
+            resize: vertical;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .stop-btn {
+            background-color: #dc3545;
+        }
+        .stop-btn:hover {
+            background-color: #c82333;
+        }
+        video {
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        canvas {
+            width: 100%;
+            max-width: 640px;
+            height: 100px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #000;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WHIP (WebRTC-HTTP Ingestion Protocol) Demo</h1>
+        
+        <div class="section">
+            <h2>Configuration</h2>
+            <div class="form-group">
+                <label for="whipUrl">WHIP Endpoint URL:</label>
+                <textarea id="whipUrl" placeholder="Enter WHIP endpoint URL"></textarea>
+            </div>
+            <button id="whipStart">Start Publishing</button>
+            <button id="whipStop" class="stop-btn" disabled>Stop Publishing</button>
+        </div>
 
-		<script type="module">
-			import WHIPClient from "../js/webrtc/WHIPClient.js";
+        <div class="section">
+            <h2>Local Video Preview</h2>
+            <video id="pubVideo" autoplay muted playsinline></video>
+        </div>
 
-			const url = "{{ .URL }}";
-			const videoElement = document.getElementById("input-video");
+        <div class="section">
+            <h2>Audio Visualization</h2>
+            <canvas id="pubAudio" width="640" height="100"></canvas>
+        </div>
 
-			self.client = new WHIPClient(url, videoElement);
-		</script>
-	</body>
+        <div id="status" class="status" style="display: none;"></div>
+    </div>
+
+    <script src="/js/webrtc/StreamVisualizer.js"></script>
+    <script>
+        // Inline negotiateConnectionWithClientOffer function to avoid loading issues
+        async function negotiateConnectionWithClientOffer(peerConnection, endpoint, token) {
+          const offer = await peerConnection.createOffer();
+          console.debug(`whxp client offer sdp:\n%c${offer.sdp}`, 'color:cyan');
+          await peerConnection.setLocalDescription(offer);
+          while (peerConnection.connectionState !== 'closed') {
+            let response = await postSDPOffer(endpoint, token, offer.sdp);
+            if (response.status === 201) {
+              let answerSDP = await response.text();
+              console.debug(`whxp client answer sdp:\n%c${answerSDP}`, 'color:cyan');
+              await peerConnection.setRemoteDescription(
+                new RTCSessionDescription({ type: 'answer', sdp: answerSDP })
+              );
+              return response.headers.get('Location');
+            } else if (response.status === 405) {
+              console.error('Update the URL passed into the WHIP or WHEP client');
+            } else {
+              const errorMessage = await response.text();
+              console.error(errorMessage);
+            }
+
+            await new Promise(r => setTimeout(r, 5000));
+          }
+        }
+
+        async function postSDPOffer(endpoint, token, data) {
+          console.log('Sending POST request to:', endpoint);
+          
+          // Prepare headers - only include Authorization if token is provided
+          const headers = {
+            'Content-Type': 'application/sdp'
+          };
+          
+          if (token && token.trim() !== '') {
+            headers['Authorization'] = 'Bearer ' + token;
+          }
+          
+          console.log('Request headers:', headers);
+          
+          try {
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              mode: 'cors',
+              headers: headers,
+              body: data,
+            });
+            
+            console.log('Response status:', response.status);
+            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+            
+            return response;
+          } catch (error) {
+            console.error('Fetch error:', error);
+            throw error;
+          }
+        }
+    </script>
+    <script src="/js/webrtc/WHIPClient.js"></script>
+    <script>
+        'use strict';
+
+        // WHIP
+        const pubVideoVideo = document.querySelector('#pubVideo');
+        const pubAudioCanvas = document.querySelector('#pubAudio');
+        const whipUrlTextarea = document.querySelector('#whipUrl');
+        const whipStartButton = document.querySelector('#whipStart');
+        const whipStopButton = document.querySelector('#whipStop');
+        const statusDiv = document.querySelector('#status');
+
+        // Global Variable
+        var whipClient = null;
+
+        // Initialize
+        window.onload = () => {
+            whipUrlTextarea.value = window.location.protocol + '//' + window.location.hostname + ':8080/live/test110.whip';
+            whipStartButton.addEventListener('click', whipStart);
+            whipStopButton.addEventListener('click', whipStop);
+        }
+
+        function showStatus(message, isError = false) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${isError ? 'error' : 'success'}`;
+            statusDiv.style.display = 'block';
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function whipStart() {
+            if (!whipUrlTextarea.value) {
+                showStatus('Please enter WHIP endpoint URL', true);
+                return;
+            }
+
+            // Clean up the URL - remove @ symbol if present
+            let cleanUrl = whipUrlTextarea.value.trim();
+            if (cleanUrl.startsWith('@')) {
+                cleanUrl = cleanUrl.substring(1);
+            }
+
+            try {
+                console.log('Starting WHIP with URL:', cleanUrl);
+                whipClient = new WHIPClient(cleanUrl, '', pubAudioCanvas, pubVideoVideo);
+                whipStartButton.disabled = true;
+                whipStopButton.disabled = false;
+                showStatus('WHIP publishing started successfully');
+            } catch (error) {
+                console.error('WHIP start error:', error);
+                showStatus('Failed to start WHIP publishing: ' + error.message, true);
+            }
+        }
+
+        function whipStop() {
+            if (whipClient) {
+                whipClient.disconnectStream();
+                whipClient = null;
+                whipStartButton.disabled = false;
+                whipStopButton.disabled = true;
+                showStatus('WHIP publishing stopped');
+            }
+        }
+    </script>
+</body>
 </html>

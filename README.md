@@ -4,7 +4,7 @@
 
 ## ✨ 特性
 
-- 🎯 **多协议支持**：支持 HLS、HTTP-FLV、MPEG-TS、RTSP、LAS、WHEP 等多种流媒体协议
+- 🎯 **多协议支持**：支持 HLS、HTTP-FLV、MPEG-TS、RTSP、LAS、WHIP、WHEP 等多种流媒体协议
 - 🚀 **低延迟播放**：专为实时流媒体优化，支持超低延迟播放
 - 🎨 **现代化界面**：美观的响应式设计，支持键盘导航
 - 🔧 **易于使用**：直观的用户界面，无需复杂配置
@@ -24,6 +24,7 @@
 
 | **LAS** | LAS | 轻量级自适应流媒体播放器 | `/las.html` |
 | **RTSP** | RTSP over WebSocket | RTSP 协议播放器 | `/rtsp.html` |
+| **WHIP** | WebRTC | WebRTC-HTTP Ingestion Protocol 发布器 | `/whip.html` |
 | **WHEP** | WebRTC | WebRTC-HTTP Egress Protocol 播放器 | `/whep.html` |
 
 ### dash.js 播放器
@@ -64,7 +65,7 @@ docker build -t gin-player:latest .
 
 ### 运行容器
 ```bash
-docker run -it -p 8080:8080 gin-player:latest
+docker run -it -p 8087:8087 gin-player:latest
 ```
 
 ## 📱 使用指南
@@ -75,22 +76,22 @@ docker run -it -p 8080:8080 gin-player:latest
 - 响应式设计，适配不同屏幕尺寸
 - 点击任意卡片即可跳转到对应播放器
 
+### WHIP 发布器
+WHIP (WebRTC-HTTP Ingestion Protocol) 用于发布/推流：
+
+1. **直接访问**：`http://localhost:8080/whip.html`
+   - 输入 WHIP 服务器地址（默认：`http://127.0.0.1:8080/live/test110.whip`）
+   - 点击"Start Publishing"按钮开始推流
+   - 支持本地摄像头和麦克风预览
+   - 实时音频可视化
+
 ### WHEP 播放器
-支持三种访问方式：
+WHEP (WebRTC-HTTP Egress Protocol) 用于播放/拉流：
 
-1. **从首页访问**：
-   - 在首页点击 WHEP 卡片
-   - 在弹出的对话框中输入 WHEP 服务器地址
-   - 自动跳转到播放器页面并填充地址
-   - 点击"开始播放"按钮开始播放
-
-2. **直接访问**：`http://localhost:8080/whep.html`
-   - 手动输入 WHEP 服务器地址
-   - 点击"开始播放"按钮开始播放
-
-3. **带参数访问**：`http://localhost:8080/whep?url=your-whep-url`
-   - 自动填充 WHEP 服务器地址
-   - 点击"开始播放"按钮即可开始播放
+1. **直接访问**：`http://localhost:8080/whep.html`
+   - 输入 WHEP 服务器地址（默认：`http://127.0.0.1:8080/live/test110.whep`）
+   - 点击"Start Subscribing"按钮开始播放
+   - 支持实时音频可视化
 
 ### Jessibuca Pro 播放器
 Jessibuca Pro 是专业版低延迟播放器，提供以下高级功能：
@@ -127,14 +128,14 @@ Jessibuca Pro 是专业版低延迟播放器，提供以下高级功能：
   - [jessibuca](https://github.com/langhuihui/jessibuca) - 低延迟播放
   - [jessibuca-pro](https://github.com/langhuihui/jessibuca-pro) - 专业版低延迟播放器，支持AI检测
   - [LAS](https://github.com/KwaiVideoTeam/las) - 自适应流媒体
-- **WebRTC**：WHIP/WHEP 协议支持
+- **WebRTC**：WHIP/WHEP 协议支持，支持推流和拉流
 - **样式**：现代化 CSS3 + 响应式设计
 
 ## 📋 各播放器访问地址
 
 | 播放器 | 访问地址 | 说明 |
 |--------|----------|------|
-| 首页 | http://localhost:8080 | 播放器导航首页 |
+| 首页 | http://localhost:8080/index.html | 播放器导航首页 |
 | FLV.js | http://localhost:8080/flvjs.html | HTTP-FLV 播放器 |
 | HLS.js | http://localhost:8080/hlsjs.html | HLS 播放器 |
 | MPEG-TS | http://localhost:8080/mpegts.html | MPEG2-TS/FLV 播放器 |
@@ -144,8 +145,35 @@ Jessibuca Pro 是专业版低延迟播放器，提供以下高级功能：
 
 | LAS | http://localhost:8080/las.html | 自适应流媒体播放器 |
 | RTSP | http://localhost:8080/rtsp.html | RTSP over WebSocket |
-| WHEP | http://localhost:8080/whep.html | WebRTC 播放器 |
-| WHEP (带参数) | http://localhost:8080/whep?url=your-whep-url | WebRTC 播放器 (自动填充地址) |
+| WHIP | http://localhost:8080/whip.html | WebRTC 推流发布器 |
+| WHEP | http://localhost:8080/whep.html | WebRTC 拉流播放器 |
+
+## 🌐 WHIP/WHEP 架构说明
+
+### 系统架构
+本项目采用分离式架构设计：
+
+- **8087端口服务器**（当前项目）：提供播放器界面和静态资源
+- **8080端口服务器**（远端服务器）：处理WHIP/WHEP协议和媒体流
+
+### WHIP 推流流程
+1. 用户访问 `http://localhost:8080/whip.html`
+2. 输入WHIP服务器地址（如：`http://127.0.0.1:8080/live/test110.whip`）
+3. 浏览器获取本地摄像头和麦克风权限
+4. 建立WebRTC连接，向远端服务器推送音视频流
+5. 支持实时预览和音频可视化
+
+### WHEP 拉流流程
+1. 用户访问 `http://localhost:8080/whep.html`
+2. 输入WHEP服务器地址（如：`http://127.0.0.1:8080/live/test110.whep`）
+3. 建立WebRTC连接，从远端服务器拉取音视频流
+4. 支持实时播放和音频可视化
+
+### 技术特点
+- **低延迟**：基于WebRTC技术，实现毫秒级延迟
+- **跨平台**：支持所有现代浏览器
+- **实时性**：支持实时音视频传输
+- **易用性**：简洁的界面，无需复杂配置
 
 ## 📄 LAS 协议配置示例
 
@@ -231,4 +259,6 @@ LAS 播放器支持多分辨率自适应播放，以下是 manifest.json 配置�
 - [jessibuca](https://github.com/langhuihui/jessibuca) - 低延迟播放器
 - [jessibuca-pro](https://github.com/langhuihui/jessibuca-pro) - 专业版低延迟播放器
 - [LAS](https://github.com/KwaiVideoTeam/las) - 自适应流媒体
+- [WebRTC](https://webrtc.org/) - 实时通信技术
+- [WHIP/WHEP](https://datatracker.ietf.org/doc/draft-ietf-wish-whip/) - WebRTC-HTTP协议
 - 以及其他所有贡献者

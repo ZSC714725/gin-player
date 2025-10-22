@@ -1,99 +1,81 @@
-import negotiateConnectionWithClientOffer from "./negotiateConnectionWithClientOffer.js";
+'use strict';
 
-/**
- * Example implementation of a client that uses WHIP to broadcast video over WebRTC
- *
- * https://www.ietf.org/archive/id/draft-ietf-wish-whip-01.html
- */
-export default class WHIPClient {
-	private peerConnection: RTCPeerConnection;
-	private localStream?: MediaStream;
+class WHIPClient {
+  private endpoint: string;
+  private token: string;
+  private audioElement: HTMLCanvasElement;
+  private videoElement: HTMLVideoElement;
+  private peerConnection: RTCPeerConnection;
+  private location?: string;
+  private streamVisualizer?: StreamVisualizer;
+  private localStream?: MediaStream;
 
-	constructor(
-		private endpoint: string,
-		private videoElement: HTMLVideoElement
-	) {
-		/**
-		 * Create a new WebRTC connection, using public STUN servers with ICE,
-		 * allowing the client to disover its own IP address.
-		 * https://developer.mozilla.org/en-US/docs/Web/API/WebRTC_API/Protocols#ice
-		 */
-		this.peerConnection = new RTCPeerConnection({
-			iceServers: [
-				{
-					urls: "stun:stun.cloudflare.com:3478",
-				},
-			],
-			bundlePolicy: "max-bundle",
-		});
+  constructor(endpoint: string, token: string, audioElement: HTMLCanvasElement, videoElement: HTMLVideoElement) {
+    this.endpoint = endpoint;
+    this.token = token;
+    this.audioElement = audioElement;
+    this.videoElement = videoElement;
 
-		/**
-		 * Listen for negotiationneeded events, and use WHIP as the signaling protocol to establish a connection
-		 *
-		 * https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection/negotiationneeded_event
-		 * https://www.ietf.org/archive/id/draft-ietf-wish-whip-01.html
-		 */
-		this.peerConnection.addEventListener("negotiationneeded", async (ev) => {
-			console.log("Connection negotiation starting");
-			await negotiateConnectionWithClientOffer(
-				this.peerConnection,
-				this.endpoint
-			);
-			console.log("Connection negotiation ended");
-		});
+    this.peerConnection = new RTCPeerConnection({
+      bundlePolicy: 'max-bundle',
+      rtcpMuxPolicy: "require",
+      iceTransportPolicy: "all"
+    });
 
-		/**
-		 * While the connection is being initialized,
-		 * connect the video stream to the provided <video> element.
-		 */
-		this.accessLocalMediaSources()
-			.then((stream) => {
-				this.localStream = stream;
-				videoElement.srcObject = stream;
-			})
-			.catch(console.error);
-	}
+    console.log('whip peer connection created.')
 
-	/**
-	 * Ask for camera and microphone permissions and
-	 * add video and audio tracks to the peerConnection.
-	 *
-	 * https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia
-	 */
-	private async accessLocalMediaSources() {
-		return navigator.mediaDevices
-			.getUserMedia({ video: true, audio: true })
-			.then((stream) => {
-				stream.getTracks().forEach((track) => {
-					const transceiver = this.peerConnection.addTransceiver(track, {
-						/** WHIP is only for sending streaming media */
-						direction: "sendonly",
-					});
-					if (track.kind == "video" && transceiver.sender.track) {
-						transceiver.sender.track.applyConstraints({
-							width: 1280,
-							height: 720,
-						});
-					}
-				});
-				return stream;
-			});
-	}
+    this.peerConnection.addEventListener('negotiationneeded', async ev => {
+      console.log('Connection negotiation starting');
+      this.location = await negotiateConnectionWithClientOffer(this.peerConnection, this.endpoint, this.token);
+      console.log('Connection negotiation ended');
+    });
 
-	/**
-	 * Terminate the streaming session
-	 * 1. Notify the WHIP server by sending a DELETE request
-	 * 2. Close the WebRTC connection
-	 * 3. Stop using the local camera and microphone
-	 *
-	 * Note that once you call this method, this instance of this WHIPClient cannot be reused.
-	 */
-	public async disconnectStream() {
-		const response = await fetch(this.endpoint, {
-			method: "DELETE",
-			mode: "cors",
-		});
-		this.peerConnection.close();
-		this.localStream?.getTracks().forEach((track) => track.stop());
-	}
+    this.accessLocalMediaSources().catch(console.error);
+  }
+
+  async accessLocalMediaSources(): Promise<MediaStream> {
+    return navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
+      this.localStream = stream;
+      stream.getTracks().forEach(track => {
+        const transceiver = this.peerConnection.addTransceiver(track, {
+          direction: 'sendonly',
+        });
+        if (!transceiver.sender.track) {
+          return
+        }
+        let ms = new MediaStream([transceiver.sender.track]);
+        switch (track.kind) {
+          case 'audio':
+            this.streamVisualizer = new StreamVisualizer(ms, this.audioElement);
+            this.streamVisualizer.start();
+            break;
+          case 'video':
+            transceiver.sender.track.applyConstraints({
+              width: 1280,
+              height: 720,
+            });
+            this.videoElement.srcObject = ms;
+            break;
+          default:
+            break;
+        }
+      });
+      return stream;
+    });
+  }
+
+  async disconnectStream(): Promise<void> {
+    this.videoElement.srcObject = null;
+    this.streamVisualizer?.stop();
+    this.streamVisualizer = undefined;
+
+    if (this.location) {
+      const response = await fetch(this.location, {
+        method: 'DELETE',
+        mode: 'cors',
+      });
+    }
+    this.peerConnection.close();
+    this.localStream?.getTracks().forEach(track => track.stop());
+  }
 }
