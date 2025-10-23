@@ -318,6 +318,17 @@
                     <option value="4k">4K (3840x2160)</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label for="keyframeInterval">Keyframe Interval (seconds):</label>
+                <select id="keyframeInterval">
+                    <option value="1">1 second</option>
+                    <option value="2" selected>2 seconds</option>
+                    <option value="3">3 seconds</option>
+                    <option value="4">4 seconds</option>
+                    <option value="5">5 seconds</option>
+                    <option value="10">10 seconds</option>
+                </select>
+            </div>
             <button id="whipStart">Start Publishing</button>
             <button id="whipStop" class="stop-btn" disabled>Stop Publishing</button>
         </div>
@@ -398,7 +409,7 @@
           }
         }
 
-        // Function to filter SDP for specific codec and add keyframe parameters
+        // Function to filter SDP for specific codec (simplified version)
         function filterSDPForCodec(sdp, preferredCodec, encodingOptions = {}) {
           const lines = sdp.split('\n');
           const filteredLines = [];
@@ -436,8 +447,9 @@
             }
           }
           
-          // Second pass: rebuild SDP with preferred codec first and keyframe parameters
+          // Second pass: rebuild SDP with preferred codec first (no custom attributes)
           inVideoSection = false;
+          
           for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             
@@ -456,20 +468,11 @@
             } else if (line.startsWith('m=') && !line.startsWith('m=video')) {
               inVideoSection = false;
               filteredLines.push(line);
-            } else if (inVideoSection && line.startsWith('a=rtpmap:')) {
-              const payloadType = line.split(':')[1].split(' ')[0];
-              // Keep all rtpmap lines for now
-              filteredLines.push(line);
-            } else if (inVideoSection && line.startsWith('a=fmtp:')) {
-              // Keep fmtp lines as-is for now to avoid SDP parsing errors
-              filteredLines.push(line);
             } else {
+              // Keep all other lines as-is to avoid SDP parsing errors
               filteredLines.push(line);
             }
           }
-          
-          // Skip adding custom attributes for now to avoid SDP parsing errors
-          // The keyframe forcing will be handled through other mechanisms
           
           const filteredSDP = filteredLines.join('\n');
           
@@ -558,6 +561,7 @@
         const videoCodecSelect = document.querySelector('#videoCodec');
         const videoBitrateRange = document.querySelector('#videoBitrate');
         const videoResolutionSelect = document.querySelector('#videoResolution');
+        const keyframeIntervalSelect = document.querySelector('#keyframeInterval');
         const bitrateValueSpan = document.querySelector('#bitrateValue');
 
         // Global Variable
@@ -732,6 +736,7 @@
             const codec = videoCodecSelect.value;
             const bitrate = parseInt(videoBitrateRange.value);
             const resolution = videoResolutionSelect.value;
+            const keyframeInterval = parseInt(keyframeIntervalSelect.value);
             
             // Parse resolution
             let width, height;
@@ -754,12 +759,13 @@
 
             try {
                 console.log('Starting WHIP with URL:', cleanUrl);
-                console.log('Encoding settings:', { codec, bitrate, width, height });
+                console.log('Encoding settings:', { codec, bitrate, width, height, keyframeInterval });
                 whipClient = new WHIPClient(cleanUrl, '', pubAudioCanvas, pubVideoVideo, {
                     codec: codec,
                     bitrate: bitrate,
                     width: width,
-                    height: height
+                    height: height,
+                    keyframeInterval: keyframeInterval
                 });
                 
                 // Initialize WebRTC statistics
@@ -772,7 +778,7 @@
                 
                 whipStartButton.disabled = true;
                 whipStopButton.disabled = false;
-                showStatus(`WHIP publishing started with ${codec} at ${width}x${height} @ ${bitrate}kbps`);
+                showStatus(`WHIP publishing started with ${codec} at ${width}x${height} @ ${bitrate}kbps, keyframe every ${keyframeInterval}s`);
             } catch (error) {
                 console.error('WHIP start error:', error);
                 showStatus('Failed to start WHIP publishing: ' + error.message, true);
