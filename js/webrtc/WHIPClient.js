@@ -7,6 +7,8 @@ class WHIPClient {
     this.audioElement = audioElement;
     this.videoElement = videoElement;
     this.encodingOptions = encodingOptions;
+    this.localStream = null;
+    this.isStreaming = false;
 
     this.peerConnection = new RTCPeerConnection({
       bundlePolicy: 'max-bundle',
@@ -21,8 +23,22 @@ class WHIPClient {
       this.location = await negotiateConnectionWithClientOffer(this.peerConnection, this.endpoint, this.token, this.encodingOptions);
       console.log('Connection negotiation ended');
     });
+  }
 
-    this.accessLocalMediaSources().catch(console.error);
+  async startPublishing() {
+    if (this.isStreaming) {
+      console.log('Already streaming');
+      return;
+    }
+    
+    try {
+      await this.accessLocalMediaSources();
+      this.isStreaming = true;
+      console.log('Started publishing');
+    } catch (error) {
+      console.error('Failed to start publishing:', error);
+      throw error;
+    }
   }
 
   async accessLocalMediaSources() {
@@ -33,53 +49,57 @@ class WHIPClient {
       frameRate: 30
     };
 
-    return navigator.mediaDevices.getUserMedia({ 
+    const stream = await navigator.mediaDevices.getUserMedia({ 
       video: videoConstraints, 
       audio: true 
-    }).then(stream => {
-      stream.getTracks().forEach(track => {
-        const transceiver = this.peerConnection.addTransceiver(track, {
-          direction: 'sendonly',
-        });
-        if (!transceiver.sender.track) {
-          return
-        }
-        let ms = new MediaStream([transceiver.sender.track]);
-        switch (track.kind) {
-          case 'audio':
-            this.streamVisualizer = new StreamVisualizer(ms, this.audioElement);
-            this.streamVisualizer.start();
-            break;
-          case 'video':
-            // Apply video constraints
-            const videoConstraints = {
-              width: this.encodingOptions.width || 1280,
-              height: this.encodingOptions.height || 720,
-              frameRate: 30
-            };
-            
-            transceiver.sender.track.applyConstraints(videoConstraints);
-            
-            // Set encoding parameters if supported
-            if (transceiver.sender.setParameters) {
-              const params = transceiver.sender.getParameters();
-              if (params.encodings && params.encodings.length > 0) {
-                params.encodings[0].maxBitrate = (this.encodingOptions.bitrate || 2500) * 1000;
-                if (this.encodingOptions.codec) {
-                  params.encodings[0].codecPayloadType = this.getCodecPayloadType(this.encodingOptions.codec);
-                }
-                transceiver.sender.setParameters(params);
-              }
-            }
-            
-            this.videoElement.srcObject = ms;
-            break;
-          default:
-            break;
-        }
-      });
-      return stream;
     });
+    
+    // Store the local stream for cleanup
+    this.localStream = stream;
+    
+    stream.getTracks().forEach(track => {
+      const transceiver = this.peerConnection.addTransceiver(track, {
+        direction: 'sendonly',
+      });
+      if (!transceiver.sender.track) {
+        return
+      }
+      let ms = new MediaStream([transceiver.sender.track]);
+      switch (track.kind) {
+        case 'audio':
+          this.streamVisualizer = new StreamVisualizer(ms, this.audioElement);
+          this.streamVisualizer.start();
+          break;
+        case 'video':
+          // Apply video constraints
+          const videoConstraints = {
+            width: this.encodingOptions.width || 1280,
+            height: this.encodingOptions.height || 720,
+            frameRate: 30
+          };
+          
+          transceiver.sender.track.applyConstraints(videoConstraints);
+          
+          // Set encoding parameters if supported
+          if (transceiver.sender.setParameters) {
+            const params = transceiver.sender.getParameters();
+            if (params.encodings && params.encodings.length > 0) {
+              params.encodings[0].maxBitrate = (this.encodingOptions.bitrate || 2500) * 1000;
+              if (this.encodingOptions.codec) {
+                params.encodings[0].codecPayloadType = this.getCodecPayloadType(this.encodingOptions.codec);
+              }
+              transceiver.sender.setParameters(params);
+            }
+          }
+          
+          this.videoElement.srcObject = ms;
+          break;
+        default:
+          break;
+      }
+    });
+    
+    return stream;
   }
 
   getCodecPayloadType(codec) {
@@ -102,18 +122,37 @@ class WHIPClient {
   }
 
   async disconnectStream() {
+    this.isStreaming = false;
+    
+    // Stop local stream tracks
+    if (this.localStream) {
+      this.localStream.getTracks().forEach(track => track.stop());
+      this.localStream = null;
+    }
+    
+    // Clear video element
     this.videoElement.srcObject = null;
-    this.streamVisualizer.stop();
-    this.streamVisualizer = null;
+    
+    // Stop stream visualizer
+    if (this.streamVisualizer) {
+      this.streamVisualizer.stop();
+      this.streamVisualizer = null;
+    }
 
-    var _a;
-    const response = await fetch(this.location, {
-      method: 'DELETE',
-      mode: 'cors',
-    });
+    // Send DELETE request to server if location is available
+    if (this.location) {
+      try {
+        const response = await fetch(this.location, {
+          method: 'DELETE',
+          mode: 'cors',
+        });
+        console.log('DELETE request sent to server');
+      } catch (error) {
+        console.error('Failed to send DELETE request:', error);
+      }
+    }
+    
+    // Close peer connection
     this.peerConnection.close();
-    (_a = this.localStream) === null || _a === void 0
-      ? void 0
-      : _a.getTracks().forEach(track => track.stop());
   }
 }

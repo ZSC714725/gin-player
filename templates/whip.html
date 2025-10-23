@@ -716,7 +716,7 @@
             }, 5000);
         }
 
-        function whipStart() {
+        async function whipStart() {
             if (!whipUrlTextarea.value) {
                 showStatus('Please enter WHIP endpoint URL', true);
                 return;
@@ -767,12 +767,25 @@
                     webrtcStats = new WebRTCStats(whipClient.peerConnection, 'webrtcStats');
                 }
                 
+                // Start publishing (this will request camera/microphone access)
+                await whipClient.startPublishing();
+                
                 whipStartButton.disabled = true;
                 whipStopButton.disabled = false;
                 showStatus(`WHIP publishing started with ${codec} at ${width}x${height} @ ${bitrate}kbps`);
             } catch (error) {
                 console.error('WHIP start error:', error);
                 showStatus('Failed to start WHIP publishing: ' + error.message, true);
+                
+                // Clean up on error
+                if (whipClient) {
+                    whipClient.disconnectStream();
+                    whipClient = null;
+                }
+                if (webrtcStats) {
+                    webrtcStats.destroy();
+                    webrtcStats = null;
+                }
             }
         }
 
