@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#0a0e27">
+    <meta name="description" content="Gin Player - 现代化视频播放器集合,支持FLV、HLS、DASH、WebRTC等多种协议">
+    <title>Gin Player - 现代化视频播放器集合</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* 深蓝黑主题配色 */
+            --bg-primary: #0a0e27;
+            --bg-secondary: #141b3a;
+            --bg-tertiary: #1e2749;
+            
+            /* 渐变色 */
+            --gradient-1: #667eea;
+            --gradient-2: #4f46e5;
+            --gradient-3: #6366f1;
+            
+            /* 文本颜色 */
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.85);
+            --text-tertiary: rgba(255, 255, 255, 0.6);
+            
+            /* 卡片样式 */
+            --card-bg: rgba(255, 255, 255, 0.06);
+            --card-border: rgba(255, 255, 255, 0.12);
+            --card-hover-bg: rgba(255, 255, 255, 0.08);
+            
+            /* 间距 */
+            --spacing-xs: 8px;
+            --spacing-sm: 16px;
+            --spacing-md: 24px;
+            --spacing-lg: 32px;
+            --spacing-xl: 40px;
+            --spacing-2xl: 60px;
+            
+            /* 圆角 */
+            --radius-sm: 12px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --radius-xl: 50px;
+        }
+
+        /* 主题切换按钮 */
+        .theme-switcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 8px;
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--card-border);
+        }
+
+        .theme-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theme-btn:hover {
+            transform: scale(1.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .theme-btn.active {
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .theme-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: inherit;
+        }
+
+        /* 深蓝黑主题 */
+        .theme-dark-blue {
+            background: linear-gradient(135deg, #0a0e27, #1e2749);
+        }
+
+        /* 深灰主题 */
+        .theme-dark-gray {
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+        }
+
+        /* 深青主题 */
+        .theme-dark-teal {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+        }
+
+        /* 深绿主题 */
+        .theme-dark-green {
+            background: linear-gradient(135deg, #0f2027, #1a3a2f, #2c5f4a);
+        }
+
+        /* 午夜蓝主题 */
+        .theme-midnight {
+            background: linear-gradient(135deg, #000428, #004e92);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+
+        #root {
+            min-height: 100vh;
+        }
+
+        .app {
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* 动态背景 */
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+            z-index: -1;
+            transition: all 0.5s ease;
+        }
+
+        .gradient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: float 20s ease-in-out infinite;
+            will-change: transform;
+        }
+
+        .orb-1 {
+            width: clamp(300px, 40vw, 500px);
+            height: clamp(300px, 40vw, 500px);
+            top: -15%;
+            left: -10%;
+            background: radial-gradient(circle, var(--gradient-1) 0%, rgba(102, 126, 234, 0) 70%);
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            width: clamp(350px, 45vw, 600px);
+            height: clamp(350px, 45vw, 600px);
+            bottom: -20%;
+            right: -15%;
+            background: radial-gradient(circle, var(--gradient-2) 0%, rgba(79, 70, 229, 0) 70%);
+            animation-delay: 5s;
+        }
+
+        .orb-3 {
+            width: clamp(250px, 35vw, 400px);
+            height: clamp(250px, 35vw, 400px);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, var(--gradient-3) 0%, rgba(99, 102, 241, 0) 70%);
+            animation-delay: 10s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+            }
+            33% {
+                transform: translate(30px, -30px) scale(1.1);
+            }
+            66% {
+                transform: translate(-20px, 20px) scale(0.9);
+            }
+        }
+
+        /* 容器 */
+        .container {
+            max-width: min(1400px, 95vw);
+            margin: 0 auto;
+            padding: clamp(var(--spacing-md), 5vw, var(--spacing-2xl)) clamp(var(--spacing-sm), 3vw, var(--spacing-xl));
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 头部 */
+        .header {
+            text-align: center;
+            margin-bottom: clamp(var(--spacing-xl), 8vw, var(--spacing-2xl));
+            opacity: 0;
+            animation: fadeInDown 0.6s ease forwards;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .title {
+            font-size: clamp(2rem, 6vw, 4rem);
+            font-weight: 900;
+            margin-bottom: var(--spacing-sm);
+            background: linear-gradient(135deg, #fff 0%, #e0e0e0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline-block;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+        }
+
+        .emoji {
+            display: inline-block;
+            margin-right: clamp(8px, 2vw, 16px);
+            filter: drop-shadow(0 4px 12px rgba(255, 255, 255, 0.3));
+        }
+
+        .subtitle {
+            font-size: clamp(0.9rem, 2.5vw, 1.25rem);
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-xl);
+            font-weight: 400;
+            line-height: 1.5;
+            padding: 0 var(--spacing-sm);
+        }
+
+        /* 搜索框 */
+        .search-box {
+            max-width: min(500px, 90vw);
+            margin: 0 auto;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: clamp(12px, 3vw, 16px) clamp(16px, 4vw, 24px);
+            font-size: clamp(0.9rem, 2vw, 1rem);
+            border: 2px solid var(--card-border);
+            border-radius: var(--radius-xl);
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .search-input:focus {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: var(--card-hover-bg);
+            box-shadow: 0 8px 32px rgba(255, 255, 255, 0.1);
+        }
+
+        /* 播放器网格 */
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+            gap: clamp(var(--spacing-md), 4vw, var(--spacing-lg));
+            margin-bottom: clamp(var(--spacing-xl), 10vw, 80px);
+        }
+
+        /* 播放器卡片 */
+        .player-card {
+            position: relative;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            padding: clamp(var(--spacing-md), 4vw, var(--spacing-lg));
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            opacity: 0;
+            animation: fadeInUp 0.6s ease forwards;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 200px;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .player-card:nth-child(1) { animation-delay: 0.1s; }
+        .player-card:nth-child(2) { animation-delay: 0.15s; }
+        .player-card:nth-child(3) { animation-delay: 0.2s; }
+        .player-card:nth-child(4) { animation-delay: 0.25s; }
+        .player-card:nth-child(5) { animation-delay: 0.3s; }
+        .player-card:nth-child(6) { animation-delay: 0.35s; }
+        .player-card:nth-child(7) { animation-delay: 0.4s; }
+        .player-card:nth-child(8) { animation-delay: 0.45s; }
+        .player-card:nth-child(9) { animation-delay: 0.5s; }
+        .player-card:nth-child(10) { animation-delay: 0.55s; }
+
+        @media (hover: hover) and (pointer: fine) {
+            .player-card:hover {
+                transform: translateY(-8px) scale(1.02);
+                background: var(--card-hover-bg);
+                border-color: rgba(255, 255, 255, 0.25);
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            }
+
+            .player-card:hover .card-icon {
+                transform: scale(1.1) rotate(5deg);
+            }
+
+            .player-card:hover .card-glow {
+                opacity: 1;
+            }
+        }
+
+        .player-card:active {
+            transform: scale(0.98);
+        }
+
+        .card-content {
+            position: relative;
+            z-index: 2;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-icon {
+            font-size: clamp(2rem, 8vw, 3rem);
+            margin-bottom: var(--spacing-sm);
+            display: inline-block;
+            filter: drop-shadow(0 4px 12px currentColor);
+            transition: transform 0.3s ease;
+            line-height: 1;
+        }
+
+        .card-title {
+            font-size: clamp(1.25rem, 4vw, 1.75rem);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: clamp(8px, 2vw, 12px);
+            letter-spacing: -0.01em;
+            line-height: 1.3;
+        }
+
+        .card-description {
+            font-size: clamp(0.85rem, 2vw, 0.95rem);
+            color: var(--text-tertiary);
+            line-height: 1.6;
+            margin-bottom: var(--spacing-md);
+            flex: 1;
+        }
+
+        .card-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(10px, 2vw, 12px) clamp(20px, 4vw, 28px);
+            border-radius: var(--radius-xl);
+            font-size: clamp(0.85rem, 2vw, 0.95rem);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.05);
+            white-space: nowrap;
+        }
+
+        @media (hover: hover) and (pointer: fine) {
+            .player-card:hover .card-button {
+                border-color: transparent;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        .card-glow {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+        }
+
+        /* 底部 */
+        .footer {
+            text-align: center;
+            padding-top: var(--spacing-xl);
+            border-top: 1px solid var(--card-border);
+            color: var(--text-tertiary);
+            opacity: 0;
+            animation: fadeIn 0.6s ease 0.5s forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .footer p {
+            margin-bottom: var(--spacing-xs);
+            font-size: clamp(0.8rem, 2vw, 0.95rem);
+        }
+
+        .tech-stack {
+            font-size: clamp(0.75rem, 1.8vw, 0.85rem);
+            color: rgba(255, 255, 255, 0.4);
+            font-style: italic;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-2xl) var(--spacing-md);
+            color: var(--text-secondary);
+            grid-column: 1 / -1;
+        }
+
+        .empty-state-icon {
+            font-size: clamp(3rem, 10vw, 4rem);
+            margin-bottom: var(--spacing-md);
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: clamp(1rem, 3vw, 1.25rem);
+        }
+
+        /* 响应式 */
+        @media (max-width: 480px) {
+            .players-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .theme-switcher {
+                top: 10px;
+                right: 10px;
+                padding: 6px;
+            }
+            
+            .theme-btn {
+                width: 32px;
+                height: 32px;
+            }
+        }
+
+        @media (min-width: 481px) and (max-width: 768px) {
+            .players-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .players-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+        }
+
+        @media (min-width: 1025px) {
+            .players-grid {
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            }
+        }
+
+        @media (min-width: 1920px) {
+            .container {
+                max-width: 1600px;
+            }
+            
+            .players-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-switcher">
+        <button class="theme-btn theme-dark-blue active" onclick="switchTheme('dark-blue')" title="深蓝黑主题"></button>
+        <button class="theme-btn theme-dark-gray" onclick="switchTheme('dark-gray')" title="深灰主题"></button>
+        <button class="theme-btn theme-dark-teal" onclick="switchTheme('dark-teal')" title="深青主题"></button>
+        <button class="theme-btn theme-dark-green" onclick="switchTheme('dark-green')" title="深绿主题"></button>
+        <button class="theme-btn theme-midnight" onclick="switchTheme('midnight')" title="午夜蓝主题"></button>
+    </div>
+
+    <div id="root">
+        <div class="app">
+            <div class="background">
+                <div class="gradient-orb orb-1"></div>
+                <div class="gradient-orb orb-2"></div>
+                <div class="gradient-orb orb-3"></div>
+            </div>
+
+            <div class="container">
+                <header class="header">
+                    <h1 class="title">
+                        <span class="emoji">🎬</span>
+                        <span>Gin Player</span>
+                    </h1>
+                    <p class="subtitle">现代化视频播放器集合 · 一站式流媒体解决方案</p>
+                    
+                    <div class="search-box">
+                        <input
+                            type="text"
+                            id="searchInput"
+                            placeholder="搜索播放器..."
+                            class="search-input"
+                            autocomplete="off"
+                            autocapitalize="off"
+                        />
+                    </div>
+                </header>
+
+                <div class="players-grid" id="playersGrid"></div>
+
+                <footer class="footer">
+                    <p>© <span id="currentYear"></span> Gin Player · 为现代 Web 视频播放而生</p>
+                    <p class="tech-stack">Powered by Modern Web Technologies</p>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 主题配置
+        const themes = {
+            'dark-blue': {
+                bgPrimary: '#0a0e27',
+                bgSecondary: '#141b3a',
+                bgTertiary: '#1e2749',
+                gradient1: '#667eea',
+                gradient2: '#4f46e5',
+                gradient3: '#6366f1',
+                themeColor: '#0a0e27'
+            },
+            'dark-gray': {
+                bgPrimary: '#1a1a1a',
+                bgSecondary: '#242424',
+                bgTertiary: '#2d2d2d',
+                gradient1: '#6b7280',
+                gradient2: '#4b5563',
+                gradient3: '#9ca3af',
+                themeColor: '#1a1a1a'
+            },
+            'dark-teal': {
+                bgPrimary: '#0f2027',
+                bgSecondary: '#203a43',
+                bgTertiary: '#2c5364',
+                gradient1: '#14b8a6',
+                gradient2: '#0d9488',
+                gradient3: '#2dd4bf',
+                themeColor: '#0f2027'
+            },
+            'dark-green': {
+                bgPrimary: '#0f2027',
+                bgSecondary: '#1a3a2f',
+                bgTertiary: '#2c5f4a',
+                gradient1: '#10b981',
+                gradient2: '#059669',
+                gradient3: '#34d399',
+                themeColor: '#0f2027'
+            },
+            'midnight': {
+                bgPrimary: '#000428',
+                bgSecondary: '#002855',
+                bgTertiary: '#004e92',
+                gradient1: '#3b82f6',
+                gradient2: '#2563eb',
+                gradient3: '#60a5fa',
+                themeColor: '#000428'
+            }
+        };
+
+        // 切换主题
+        function switchTheme(themeName) {
+            const theme = themes[themeName];
+            if (!theme) return;
+
+            const root = document.documentElement;
+            root.style.setProperty('--bg-primary', theme.bgPrimary);
+            root.style.setProperty('--bg-secondary', theme.bgSecondary);
+            root.style.setProperty('--bg-tertiary', theme.bgTertiary);
+            root.style.setProperty('--gradient-1', theme.gradient1);
+            root.style.setProperty('--gradient-2', theme.gradient2);
+            root.style.setProperty('--gradient-3', theme.gradient3);
+
+            // 更新meta theme-color
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', theme.themeColor);
+
+            // 更新激活状态
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.theme-${themeName}`).classList.add('active');
+
+            // 保存到localStorage
+            localStorage.setItem('theme', themeName);
+        }
+
+        // 页面加载时恢复主题
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark-blue';
+            switchTheme(savedTheme);
+        });
+
+        const players = [
+            {
+                id: 'flvjs',
+                name: 'FLV.js',
+                description: '基于 HTML5 的 FLV 视频播放器,支持 HTTP-FLV 流媒体播放',
+                icon: '📹',
+                url: '/flvjs.html',
+                color: '#FF6B6B',
+                gradient: 'linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%)'
+            },
+            {
+                id: 'hlsjs',
+                name: 'HLS.js',
+                description: 'HTTP Live Streaming 播放器,支持自适应码率流媒体',
+                icon: '📺',
+                url: '/hlsjs.html',
+                color: '#4ECDC4',
+                gradient: 'linear-gradient(135deg, #4ECDC4 0%, #70DDD5 100%)'
+            },
+            {
+                id: 'dash',
+                name: 'dash.js',
+                description: 'MPEG-DASH 协议播放器,开源自适应流媒体解决方案',
+                icon: '🎬',
+                url: '/dash/index.html',
+                color: '#1E90FF',
+                gradient: 'linear-gradient(135deg, #1E90FF 0%, #4BA3FF 100%)'
+            },
+            {
+                id: 'mpegts',
+                name: 'MPEG-TS',
+                description: 'MPEG2-TS/FLV 播放器,专为低延迟直播优化',
+                icon: '🎞️',
+                url: '/mpegts.html',
+                color: '#45B7D1',
+                gradient: 'linear-gradient(135deg, #45B7D1 0%, #67C7E1 100%)'
+            },
+            {
+                id: 'jessibuca',
+                name: 'Jessibuca',
+                description: '超低延迟视频播放器,专为实时流媒体优化',
+                icon: '⚡',
+                url: '/jessibuca.html',
+                color: '#96CEB4',
+                gradient: 'linear-gradient(135deg, #96CEB4 0%, #B3DEC4 100%)'
+            },
+            {
+                id: 'jessibuca-pro',
+                name: 'Jessibuca Pro',
+                description: '专业版低延迟播放器,支持 AI 检测和多种高级功能',
+                icon: '🚀',
+                url: '/jessibuca-pro/',
+                color: '#FF9F43',
+                gradient: 'linear-gradient(135deg, #FF9F43 0%, #FFB665 100%)'
+            },
+            {
+                id: 'las',
+                name: 'LAS',
+                description: '轻量级自适应流媒体播放器,快手开源',
+                icon: '🎯',
+                url: '/las.html',
+                color: '#FECA57',
+                gradient: 'linear-gradient(135deg, #FECA57 0%, #FED779 100%)'
+            },
+            {
+                id: 'rtsp',
+                name: 'RTSP',
+                description: 'RTSP 协议播放器,基于 WebSocket 实时传输',
+                icon: '🔗',
+                url: '/rtsp.html',
+                color: '#FF9FF3',
+                gradient: 'linear-gradient(135deg, #FF9FF3 0%, #FFB6F5 100%)'
+            },
+            {
+                id: 'whep',
+                name: 'WHEP',
+                description: 'WebRTC-HTTP Egress Protocol 播放器,超低延迟拉流',
+                icon: '📡',
+                url: '/whep.html',
+                color: '#54A0FF',
+                gradient: 'linear-gradient(135deg, #54A0FF 0%, #76B3FF 100%)'
+            },
+            {
+                id: 'whip',
+                name: 'WHIP',
+                description: 'WebRTC-HTTP Ingestion Protocol 发布器,超低延迟推流',
+                icon: '📤',
+                url: '/whip.html',
+                color: '#FF6B9D',
+                gradient: 'linear-gradient(135deg, #FF6B9D 0%, #FF8DB5 100%)'
+            },
+            {
+                id: 'xgplayer',
+                name: 'XGPlayer',
+                description: '字节跳动开源 HTML5 播放器,支持多种格式和流媒体协议',
+                icon: '🍉',
+                url: '/xgplayer.html',
+                color: '#10b981',
+                gradient: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)'
+            }
+        ];
+
+        function renderPlayers(filteredPlayers) {
+            const grid = document.getElementById('playersGrid');
+            
+            if (filteredPlayers.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <div class="empty-state-text">未找到匹配的播放器</div>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = '';
+
+            filteredPlayers.forEach((player, index) => {
+                const card = document.createElement('a');
+                card.href = player.url;
+                card.className = 'player-card';
+                card.setAttribute('data-player-id', player.id);
+                card.setAttribute('tabindex', '0');
+
+                card.innerHTML = `
+                    <div class="card-content">
+                        <div class="card-icon" style="color: ${player.color}">
+                            ${player.icon}
+                        </div>
+                        
+                        <h3 class="card-title">${player.name}</h3>
+                        <p class="card-description">${player.description}</p>
+                        
+                        <div class="card-button">
+                            <span style="color: ${player.color}">进入播放器 →</span>
+                        </div>
+                    </div>
+
+                    <div class="card-glow" style="background: ${player.gradient}"></div>
+                `;
+
+                // 桌面端悬停效果
+                if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                    card.addEventListener('mouseenter', function() {
+                        const button = this.querySelector('.card-button');
+                        const span = button.querySelector('span');
+                        button.style.background = player.gradient;
+                        button.style.borderColor = 'transparent';
+                        span.style.color = '#fff';
+                    });
+
+                    card.addEventListener('mouseleave', function() {
+                        const button = this.querySelector('.card-button');
+                        const span = button.querySelector('span');
+                        button.style.background = 'rgba(255, 255, 255, 0.05)';
+                        button.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+                        span.style.color = player.color;
+                    });
+                }
+
+                // 触摸反馈
+                card.addEventListener('touchstart', function() {
+                    this.style.transform = 'scale(0.98)';
+                }, { passive: true });
+
+                card.addEventListener('touchend', function() {
+                    this.style.transform = '';
+                }, { passive: true });
+
+                // 焦点样式
+                card.addEventListener('focus', function() {
+                    this.style.outline = '2px solid rgba(255, 255, 255, 0.5)';
+                    this.style.outlineOffset = '4px';
+                });
+                
+                card.addEventListener('blur', function() {
+                    this.style.outline = 'none';
+                });
+
+                grid.appendChild(card);
+            });
+        }
+
+        // 搜索功能
+        let searchTimeout;
+        const searchInput = document.getElementById('searchInput');
+        
+        searchInput.addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            const searchTerm = e.target.value.toLowerCase().trim();
+            
+            searchTimeout = setTimeout(() => {
+                const filtered = players.filter(player =>
+                    player.name.toLowerCase().includes(searchTerm) ||
+                    player.description.toLowerCase().includes(searchTerm)
+                );
+                renderPlayers(filtered);
+            }, 150);
+        });
+
+        // 键盘导航
+        document.addEventListener('keydown', function(e) {
+            if (e.target === searchInput) return;
+
+            const cards = Array.from(document.querySelectorAll('.player-card'));
+            const focusedIndex = cards.findIndex(card => card === document.activeElement);
+
+            switch(e.key) {
+                case 'ArrowRight':
+                case 'ArrowDown':
+                    e.preventDefault();
+                    if (focusedIndex < cards.length - 1) {
+                        cards[focusedIndex + 1].focus();
+                    } else if (focusedIndex === -1 && cards.length > 0) {
+                        cards[0].focus();
+                    }
+                    break;
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                    e.preventDefault();
+                    if (focusedIndex > 0) {
+                        cards[focusedIndex - 1].focus();
+                    }
+                    break;
+                case 'Enter':
+                case ' ':
+                    if (focusedIndex >= 0) {
+                        e.preventDefault();
+                        cards[focusedIndex].click();
+                    }
+                    break;
+                case '/':
+                    e.preventDefault();
+                    searchInput.focus();
+                    break;
+            }
+        });
+
+        // 页面可见性
+        document.addEventListener('visibilitychange', function() {
+            const orbs = document.querySelectorAll('.gradient-orb');
+            orbs.forEach(orb => {
+                orb.style.animationPlayState = document.hidden ? 'paused' : 'running';
+            });
+        });
+
+        // 初始渲染
+        renderPlayers(players);
+
+        // 动态更新年份
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>

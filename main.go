@@ -24,13 +24,14 @@ func main() {
 	router.GET("/rtsp.html", HandleRtspOverWebsocket)
 	router.GET("/las.html", HandleLas)
 	router.GET("/flvjs.html", HandleFlvjs)
+	router.GET("/xgplayer.html", HandleXgplayer)
 	router.GET("/favicon.ico", HandleFavicon)
 
-	router.Run(":8080")
+	router.Run(":8087")
 }
 
 func HandleIndex(c *gin.Context) {
-	c.HTML(200, "index.html", nil)
+	c.HTML(200, "index-react.html", nil)
 }
 
 func HandleJessibuca(c *gin.Context) {
@@ -67,4 +68,8 @@ func HandleWhipHtml(c *gin.Context) {
 
 func HandleWhepHtml(c *gin.Context) {
 	c.HTML(200, "whep.html", nil)
+}
+
+func HandleXgplayer(c *gin.Context) {
+	c.HTML(200, "xgplayer.html", nil)
 }

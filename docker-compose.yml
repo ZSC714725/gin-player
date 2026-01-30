@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  gin-player:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gin-player
+    ports:
+      - "8087:8087"
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+    # 如果需要挂载配置文件,可以使用volumes
+    # volumes:
+    #   - ./config:/app/config
